@@ -70,7 +70,7 @@ void ClientMachine::initialize () {
  */
 void ClientMachine::processFrame (Frame frame, int ifaceIndex) {
 	// TODO: process the raw frame; frame.data points to the frame's byte stream
-	cerr << "Frame received at iface " << ifaceIndex <<
+	/*cerr << "Frame received at iface " << ifaceIndex <<
 	     " with length " << frame.length << endl;
 	struct ethernet_header {
 		byte  dst[6];
@@ -79,7 +79,7 @@ void ClientMachine::processFrame (Frame frame, int ifaceIndex) {
 	} __attribute__ ((packed));
 
 	ethernet_header *eth = (ethernet_header *) frame.data;
-	cerr << "Ethernet type field is 0x" << std::hex << ntohs (eth->type) << endl;
+	cerr << "Ethernet type field is 0x" << std::hex << ntohs (eth->type) << endl;*/
 }
 
 
@@ -89,13 +89,25 @@ void ClientMachine::processFrame (Frame frame, int ifaceIndex) {
  */
 void ClientMachine::run () {
 	// TODO: write your business logic here...
-	struct ethernet_header {
-		byte  dst[6];
-		byte  src[6];
-		uint16 type;
-	} __attribute__ ((packed));
+//	struct ethernet_header {
+//		byte  dst[6];
+//		byte  src[6];
+//		uint16 type;
+//	} __attribute__ ((packed));
+//
+//	struct ethernet_data {
+//		byte  data_type;
+//		byte  MAC[6];
+//		uint32 IP;
+//		int time;
+//	} __attribute__ ((packed));
+//
+//	struct header {
+//		ethernet_header header;
+//		ethernet_data data;
+//	} __attribute__ ((packed));
 
-	const int frameLength = sizeof (ethernet_header) + 100;
+	/*const int frameLength = sizeof (ethernet_header) + 100;
 	byte *data = new byte[frameLength];
 
 	ethernet_header *eth = (ethernet_header *) data;
@@ -112,6 +124,183 @@ void ClientMachine::run () {
 	sendFrame (frame, 0); // sends frame on interface 0
 
 	delete[] data;
-	cerr << "now ./free.sh and check the pcap log file to see the sent packet" << endl;
+	cerr << "now ./free.sh and check the pcap log file to see the sent packet" << endl; */
+	for (;;) {
+		auto input = new input_part;
+		parse_input(input);
+
+		switch (input->c_type){
+			case GET_IP_client:
+				t_dhcp_discover(input->time);
+				break;
+			case ACCEPT_OFFER_client:
+				accept_dhcp_offer(input->IP, input->time);
+				break;
+			case RELEASE_client:
+				release_ip(input->IP);
+				break;
+			case EXTEND_LEASE_client:
+				extend_lease(input->IP, input->time);
+				break;
+			case PRINT_IP_client:
+				handle_ip_list();
+				break;
+			default:
+				cout << "invalid command" << endl;
+		}
+	}
+}
+void ClientMachine::parse_input(input_part *input)
+{
+	memset(input, 0, sizeof(input_part));
+
+	std::string command;
+	getline(std::cin, command);
+	std::vector<std::string> command_tok = split(command, ' ');
+
+	std::regex get_ip("get ip for time .*");
+	std::regex accept_offer("accept offer: .*");
+	std::regex release("release .*");
+	std::regex extend_lease("extend lease .*");
+	std::regex print_ip("print ip");
+
+	if (std::regex_match(command, get_ip)){
+		input->c_type = GET_IP_client;
+		input->time = std::stoi(command_tok[4]);
+	} else if (std::regex_match(command, accept_offer)){
+		input->c_type = ACCEPT_OFFER_client;
+		make_up_uint32(command_tok[2], input);
+		input->time = std::stoi(command_tok[5]);
+	} else if (std::regex_match(command, release)){
+		input->c_type = RELEASE_client;
+		make_up_uint32(command_tok[1], input);
+	} else if (std::regex_match(command, extend_lease)){
+		input->c_type = EXTEND_LEASE_client;
+		make_up_uint32(command_tok[2], input);
+		input->time = std::stoi(command_tok[5]);
+	} else if (std::regex_match(command, print_ip)){
+		input->c_type = PRINT_IP_client;
+	}
+}
+void ClientMachine::t_dhcp_discover(int requested_time)
+{
+	int count = getCountOfInterfaces();
+	for (int i = 0; i < count; i++) {
+		auto frame_data = new byte[SIZE_OF_FRAME];
+		auto ethz = (ethernet_frame *) frame_data;
+		memset(ethz->header.dst, 255, 6);
+		memcpy(ethz->header.src, iface[i].mac, 6);
+		ethz->header.type = htons(0x0);
+		ethz->data.data_type = DHCP_DISCOVER;
+		memcpy(ethz->data.MAC, iface[0].mac, 6);
+		ethz->data.IP = 0;
+		ethz->data.time = requested_time;
+		Frame frame ((uint32) SIZE_OF_FRAME, frame_data);
+		sendFrame(frame, i);
+
+		delete[] ethz;
+	}
+}
+void ClientMachine::r_dhcp_offer(Frame frame, int iface_number)
+{
+	auto ethz = (ethernet_frame *) frame.data;
+
+	if (memcmp(ethz->data.MAC, iface[0].mac, 6) == 0){
+		offers.push_back(ethz);
+		cout << "new offer: ";
+		ip_ntop(ethz->data.IP);
+		cout << " for time " << ethz->data.time << endl;
+	}
+}
+void ClientMachine::accept_dhcp_offer(uint32 IP, int requested_time)
+{
+	for (auto itr = this->offers.begin(); itr < this->offers.end(); itr++){
+		if ((*itr)->data.IP == IP){
+			if ((*itr)->data.time >= requested_time)
+				t_dhcp_request(IP, requested_time);
+			else
+				cout << "invalid offer" << endl;
+			return;
+		}
+	}
+}
+void ClientMachine::t_dhcp_request(uint32 IP, int requested_time)
+{
+	int count = getCountOfInterfaces();
+	for (int i = 0; i < count; i++){
+		auto frame_data = new byte[SIZE_OF_FRAME];
+		auto ethz = (ethernet_frame*)(frame_data);
+		memset(ethz->header.dst, 255, 6);
+		memcpy(ethz->header.src, iface[i].mac, 6);
+		ethz->header.type = htons(0x0);
+		ethz->data.data_type = DHCP_REQUEST;
+		memcpy(ethz->data.MAC, iface[0].mac, 6); //TODO
+		ethz->data.IP = IP;
+		ethz->data.time = requested_time;
+		Frame frame ((uint32) SIZE_OF_FRAME, frame_data);
+		sendFrame(frame, i);
+		delete[] frame_data;
+	}
+}
+void ClientMachine::r_dhcp_ack(Frame frame, int iface_number)
+{
+	auto frame_data = (ethernet_frame*) frame.data;
+	if (current_ip != nullptr)
+		old_IPs.push_back(current_ip);
+	current_ip = frame_data;
+
+	cout << "now my ip is ";
+	ip_ntop(frame_data->data.IP);
+	cout << " for time " << frame_data->data.time << endl;
+
+	int count = getCountOfInterfaces();
+	for (int i = 0; i < count; i++){
+		if (i != iface_number){
+			sendFrame(frame, i);
+		}
+	}
+
+}
+void ClientMachine::r_dhcp_timeout(Frame frame, int iface_number)
+{
+
+}
+void ClientMachine::release_ip(uint32)
+{
+
+}
+void ClientMachine::t_dhcp_release(uint32)
+{
+
+}
+void ClientMachine::extend_lease(uint32 IP, int requested_time)
+{
+
+}
+void ClientMachine::t_dhcp_extend_request(uint32 IP, int requested_time)
+{
+
+}
+void ClientMachine::handle_ip_list()
+{
+	std::sort(old_IPs.begin(), old_IPs.end(),& ClientMachine::factor_by_IP);
+
+}
+void ClientMachine::r_dhcp_extend_response(Frame frame, int iface_number)
+{
+
+}
+void ClientMachine::nazri(Frame frame, int src_iface)
+{
+	int count = getCountOfInterfaces();
+	for (int i = 0; i < count; i++){
+		if (i != src_iface){
+			sendFrame(frame, i);
+		}
+	}
+}
+bool ClientMachine::factor_by_IP(const ethernet_frame *f1, const ethernet_frame *f2)
+{
+	return f2->data.IP > f1->data.IP;
 }
 

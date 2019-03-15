@@ -25,8 +25,63 @@
 #ifndef _SI_M_H_
 #define _SI_M_H_
 
+#include <vector>
+#include <sstream>
+#include <regex>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include "sm.h"
 #include "../base/frame.h"
+#define SIZE_OF_FRAME sizeof(ethernet_frame)
+
+enum dhcp_command_type{
+	GET_IP_client,
+	ACCEPT_OFFER_client,
+	RELEASE_client,
+	EXTEND_LEASE_client,
+	PRINT_IP_client,
+	ADD_POOL_server,
+	ADD_TIME_server,
+	PRINT_POOL_server
+};
+
+enum dhcp_data_type{
+	DHCP_DISCOVER,
+	DHCP_OFFER,
+	DHCP_REQUEST,
+	DHCP_ACK,
+	DHCP_RELEASE,
+	DHCP_TIMEOUT,
+	DHCP_REQUEST_EXTEND,
+	DHCP_RESPONSE_EXTEND
+};
+
+struct ethernet_header {
+	byte  dst[6];
+	byte  src[6];
+	uint16 type;
+} __attribute__ ((packed));
+
+struct ethernet_data {
+	byte  data_type;
+	byte  MAC[6];
+	uint32 IP;
+	int time;
+} __attribute__ ((packed));
+
+struct ethernet_frame {
+	ethernet_header header;
+	ethernet_data data;
+} __attribute__ ((packed));
+
+struct input_part {
+	dhcp_command_type c_type;
+	int time;
+	uint32 IP;
+	int mask;
+	int MAC;
+};
 
 class SimpleMachine{
 private:
@@ -48,6 +103,10 @@ public:
 	const std::string getCustomInformation ();
 
 	bool sendFrame (Frame frame, int ifaceIndex);
+	std::vector<std::string> split(std::string str, char delimiter);
+	void make_up_uint32(std::string IP, input_part *temp);
+	void ip_ntop(uint32 IP);
+
 };
 
 #endif /* sm.h */
