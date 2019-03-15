@@ -80,6 +80,28 @@ void ClientMachine::processFrame (Frame frame, int ifaceIndex) {
 
 	ethernet_header *eth = (ethernet_header *) frame.data;
 	cerr << "Ethernet type field is 0x" << std::hex << ntohs (eth->type) << endl;*/
+	auto frame_data = (ethernet_frame *) frame.data;
+
+	if (frame_data->data.MAC != iface[0].mac){
+		nazri(frame, ifaceIndex);
+	} else {
+		switch (frame_data->data.data_type){
+			case DHCP_OFFER:
+				r_dhcp_offer(frame, ifaceIndex);
+				break;
+			case DHCP_ACK:
+				r_dhcp_ack(frame, ifaceIndex);
+				break;
+			case DHCP_TIMEOUT:
+				r_dhcp_timeout(frame, ifaceIndex);
+				break;
+			case DHCP_RESPONSE_EXTEND:
+				r_dhcp_extend_response(frame, ifaceIndex);
+				break;
+			default:
+				cout << "invalid packet, dropped" << endl;
+		}
+	}
 }
 
 
@@ -275,20 +297,51 @@ void ClientMachine::t_dhcp_release(uint32)
 }
 void ClientMachine::extend_lease(uint32 IP, int requested_time)
 {
-
+	if (IP == current_ip->data.IP){
+		t_dhcp_extend_request(IP, requested_time);
+		old_IPs.push_back(current_ip);
+		current_ip = nullptr;
+	}
 }
 void ClientMachine::t_dhcp_extend_request(uint32 IP, int requested_time)
 {
+	int count = getCountOfInterfaces();
+	for (int i = 0; i < count; i++) {
+		auto data = new byte[SIZE_OF_FRAME];
+		auto ethz = (ethernet_frame*) data;
+		memset(ethz->header.dst, 255, 6);
+		memcpy(ethz->header.src, iface[0].mac, 6);
+		ethz->header.type = htons(0x0);
+		ethz->data.data_type = DHCP_REQUEST_EXTEND;
+		memcpy(ethz->data.MAC, iface[0].mac, 6);
+		ethz->data.IP = IP;
+		ethz->data.time = requested_time;
 
+		Frame frame ((uint32) SIZE_OF_FRAME, data);
+		sendFrame(frame, i);
+
+		delete[] data;
+	}
 }
 void ClientMachine::handle_ip_list()
 {
-	std::sort(old_IPs.begin(), old_IPs.end(),& ClientMachine::factor_by_IP);
-
+	sort(old_IPs.begin(), old_IPs.end(), & ClientMachine::factor_by_IP);
+	auto count = (int) old_IPs.size();
+	for (int i = 0; i < count; i++) {
+		ip_ntop(old_IPs[i]->data.IP);
+		cout << endl;
+	}
+	ip_ntop(current_ip->data.IP);
+	cout << endl;
 }
 void ClientMachine::r_dhcp_extend_response(Frame frame, int iface_number)
 {
-
+	auto frame_data = (ethernet_frame*) frame.data;
+	//TODO TODO
+	current_ip = frame_data;
+	cout << "now my ip is ";
+	ip_ntop(frame_data->data.IP);
+	cout << " for time " << frame_data->data.time << endl;
 }
 void ClientMachine::nazri(Frame frame, int src_iface)
 {
