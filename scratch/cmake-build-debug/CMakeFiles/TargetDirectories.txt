@@ -1,0 +1,3 @@
+/home/sthossein/NetW/scratch/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/sthossein/NetW/scratch/cmake-build-debug/CMakeFiles/scratch.dir
+/home/sthossein/NetW/scratch/cmake-build-debug/CMakeFiles/edit_cache.dir

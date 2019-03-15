@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/scratch.dir/main.cpp.o  -o scratch 

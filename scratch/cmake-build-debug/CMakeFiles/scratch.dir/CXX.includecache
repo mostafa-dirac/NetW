@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/sthossein/NetW/scratch/main.cpp
+iostream
+-
+sys/socket.h
+-
+sys/types.h
+-
+netinet/in.h
+-
+cstring
+-
+string
+-
+unistd.h
+-
+vector
+-
+
