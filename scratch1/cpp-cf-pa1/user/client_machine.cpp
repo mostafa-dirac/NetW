@@ -285,15 +285,43 @@ void ClientMachine::r_dhcp_ack(Frame frame, int iface_number)
 }
 void ClientMachine::r_dhcp_timeout(Frame frame, int iface_number)
 {
-
+	auto frame_data = (ethernet_frame *) frame.data;
+	if (frame_data->data.IP == current_ip->data.IP){
+		old_IPs.push_back(current_ip);
+		current_ip = nullptr;
+		cout << "ip released" << endl;
+		return;
+	}
 }
-void ClientMachine::release_ip(uint32)
+void ClientMachine::release_ip(uint32 IP)
 {
-
+	if (IP == current_ip->data.IP){
+		t_dhcp_release(IP);
+		cout << "ip released" << endl;
+		old_IPs.push_back(current_ip);
+		return;
+	}
 }
-void ClientMachine::t_dhcp_release(uint32)
+void ClientMachine::t_dhcp_release(uint32 IP)
 {
+	int count = getCountOfInterfaces();
+	for (int i = 0; i < count; i++) {
+		auto data = new byte[SIZE_OF_FRAME];
+		auto ethz = (ethernet_frame *) data;
 
+		memset(ethz->header.dst, 255, 6);
+		memcpy(ethz->header.src, iface[i].mac, 6);
+		ethz->header.type = htons(0x0);
+		ethz->data.data_type = DHCP_RELEASE;
+		memcpy(ethz->data.MAC, iface[0].mac, 6);
+		ethz->data.IP = IP;
+		ethz->data.time = 0;
+
+		Frame frame ((uint32) SIZE_OF_FRAME, data);
+		sendFrame(frame, i);
+
+		delete[] data;
+	}
 }
 void ClientMachine::extend_lease(uint32 IP, int requested_time)
 {

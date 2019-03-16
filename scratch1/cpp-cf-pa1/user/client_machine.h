@@ -47,8 +47,8 @@ public:
 	void accept_dhcp_offer (uint32 IP, int requested_time);
 	void t_dhcp_request (uint32 IP, int requested_time);
 	void r_dhcp_ack (Frame frame, int iface_number);
-	void release_ip (uint32);
-	void t_dhcp_release (uint32);
+	void release_ip (uint32 IP);
+	void t_dhcp_release (uint32 IP);
 	void r_dhcp_timeout (Frame frame, int iface_number);
 	void extend_lease(uint32 IP, int requested_time);
 	void t_dhcp_extend_request (uint32 IP, int requested_time);
