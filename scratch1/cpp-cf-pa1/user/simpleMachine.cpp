@@ -78,3 +78,8 @@ void SimpleMachine::ip_ntop(uint32 IP){
 
 	std::cout << b0 << "." << b1 << "." << b2 << "." << b3;
 }
+
+bool SimpleMachine::factor_by_IP(const ethernet_frame *f1, const ethernet_frame *f2)
+{
+	return f2->data.IP > f1->data.IP;
+}

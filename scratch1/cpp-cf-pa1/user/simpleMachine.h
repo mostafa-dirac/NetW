@@ -106,6 +106,7 @@ public:
 	std::vector<std::string> split(std::string str, char delimiter);
 	void make_up_uint32(std::string IP, input_part *temp);
 	void ip_ntop(uint32 IP);
+	bool factor_by_IP(const ethernet_frame *f1, const ethernet_frame *h2);
 
 };
 

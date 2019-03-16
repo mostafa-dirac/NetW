@@ -323,17 +323,7 @@ void ClientMachine::t_dhcp_extend_request(uint32 IP, int requested_time)
 		delete[] data;
 	}
 }
-void ClientMachine::handle_ip_list()
-{
-	sort(old_IPs.begin(), old_IPs.end(), & ClientMachine::factor_by_IP);
-	auto count = (int) old_IPs.size();
-	for (int i = 0; i < count; i++) {
-		ip_ntop(old_IPs[i]->data.IP);
-		cout << endl;
-	}
-	ip_ntop(current_ip->data.IP);
-	cout << endl;
-}
+
 void ClientMachine::r_dhcp_extend_response(Frame frame, int iface_number)
 {
 	auto frame_data = (ethernet_frame*) frame.data;
@@ -352,8 +342,18 @@ void ClientMachine::nazri(Frame frame, int src_iface)
 		}
 	}
 }
-bool ClientMachine::factor_by_IP(const ethernet_frame *f1, const ethernet_frame *f2)
-{
-	return f2->data.IP > f1->data.IP;
-}
 
+
+void ClientMachine::handle_ip_list()
+{
+	old_IPs.push_back(current_ip);
+	std::sort(old_IPs.begin(), old_IPs.end(), [](const ethernet_frame* f1, const ethernet_frame* f2) {return f1->data.IP < f2->data.IP;});
+	auto count = (int) old_IPs.size();
+	for (int i = 0; i < count; i++) {
+		ip_ntop(old_IPs[i]->data.IP);
+		cout << endl;
+	}
+	old_IPs.erase(find(old_IPs.begin(), old_IPs.end(), current_ip));
+//	ip_ntop(current_ip->data.IP);
+//	cout << endl;
+}

@@ -56,7 +56,6 @@ public:
 	void handle_ip_list ();
 	void parse_input (input_part *input);
 	void nazri (Frame frame, int src_iface);
-	bool factor_by_IP(const ethernet_frame *f1, const ethernet_frame *h2);
 
 
 };
