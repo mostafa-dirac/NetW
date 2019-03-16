@@ -216,7 +216,7 @@ void ClientMachine::t_dhcp_discover(int requested_time)
 		ethz->data.data_type = DHCP_DISCOVER;
 		memcpy(ethz->data.MAC, iface[0].mac, 6);
 		ethz->data.IP = 0;
-		ethz->data.time = requested_time;
+		ethz->data.time = htonl((uint32)requested_time);
 		Frame frame ((uint32) SIZE_OF_FRAME, frame_data);
 		sendFrame(frame, i);
 
@@ -257,8 +257,8 @@ void ClientMachine::t_dhcp_request(uint32 IP, int requested_time)
 		ethz->header.type = htons(0x0);
 		ethz->data.data_type = DHCP_REQUEST;
 		memcpy(ethz->data.MAC, iface[0].mac, 6); //TODO
-		ethz->data.IP = IP;
-		ethz->data.time = requested_time;
+		ethz->data.IP = IP; //htonl(IP);
+		ethz->data.time = htonl((uint32)requested_time);
 		Frame frame ((uint32) SIZE_OF_FRAME, frame_data);
 		sendFrame(frame, i);
 		delete[] frame_data;
@@ -314,7 +314,7 @@ void ClientMachine::t_dhcp_release(uint32 IP)
 		ethz->header.type = htons(0x0);
 		ethz->data.data_type = DHCP_RELEASE;
 		memcpy(ethz->data.MAC, iface[0].mac, 6);
-		ethz->data.IP = IP;
+		ethz->data.IP = IP; //htonl(IP);
 		ethz->data.time = 0;
 
 		Frame frame ((uint32) SIZE_OF_FRAME, data);
@@ -342,8 +342,8 @@ void ClientMachine::t_dhcp_extend_request(uint32 IP, int requested_time)
 		ethz->header.type = htons(0x0);
 		ethz->data.data_type = DHCP_REQUEST_EXTEND;
 		memcpy(ethz->data.MAC, iface[0].mac, 6);
-		ethz->data.IP = IP;
-		ethz->data.time = requested_time;
+		ethz->data.IP = IP; //htonl(IP);
+		ethz->data.time = htonl((uint32)requested_time);
 
 		Frame frame ((uint32) SIZE_OF_FRAME, data);
 		sendFrame(frame, i);
