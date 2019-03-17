@@ -178,6 +178,7 @@ void ClientMachine::parse_input(input_part *input)
 
 	std::string command;
 	getline(std::cin, command);
+	cout << command;
 	std::vector<std::string> command_tok = split(command, ' ');
 
 	std::regex get_ip("get ip for time .*");
@@ -226,7 +227,6 @@ void ClientMachine::t_dhcp_discover(int requested_time)
 void ClientMachine::r_dhcp_offer(Frame frame, int iface_number)
 {
 	auto ethz = (ethernet_frame *) frame.data;
-
 	if (memcmp(ethz->data.MAC, iface[0].mac, 6) == 0){
 		offers.push_back(ethz);
 		cout << "new offer: ";

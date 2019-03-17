@@ -67,7 +67,7 @@ struct ethernet_data {
 	byte  data_type;
 	byte  MAC[6];
 	uint32 IP;
-	int time;
+	uint32 time;
 } __attribute__ ((packed));
 
 struct ethernet_frame {

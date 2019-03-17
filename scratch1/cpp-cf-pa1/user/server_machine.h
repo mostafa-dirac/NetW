@@ -36,6 +36,18 @@ public:
 	virtual void initialize ();
 	virtual void run ();
 	virtual void processFrame (Frame frame, int ifaceIndex);
+
+	void parse_admin_input (input_part *input);
+	void print_pool ();
+	void add_pool (uint32 IP, uint8_t mask);
+	void add_time (int time);
+	void r_dhcp_discover (Frame frame, int iface_number);
+	void r_dhcp_request (Frame frame, int iface_number);
+	void r_dhcp_ack (Frame frame, int iface_number);
+	void r_dhcp_release (Frame frame, int iface_number);
+	void r_dhcp_extend_request (Frame frame, int iface_number);
+	void t_dhcp_timeout (ethernet_frame *announce);
+
 };
 
 #endif

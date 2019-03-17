@@ -114,4 +114,44 @@ void ServerMachine::run () {
 	delete[] data;
 	cerr << "now ./free.sh and check the pcap log file to see the sent packet" << endl;
 }
+void ServerMachine::parse_admin_input(input_part *input)
+{
+
+}
+void ServerMachine::print_pool()
+{
+
+}
+void ServerMachine::add_pool(uint32 IP, uint8_t mask)
+{
+
+}
+void ServerMachine::add_time(int time)
+{
+
+}
+void ServerMachine::r_dhcp_discover(Frame frame, int iface_number)
+{
+
+}
+void ServerMachine::r_dhcp_request(Frame frame, int iface_number)
+{
+
+}
+void ServerMachine::r_dhcp_ack(Frame frame, int iface_number)
+{
+
+}
+void ServerMachine::r_dhcp_release(Frame frame, int iface_number)
+{
+
+}
+void ServerMachine::r_dhcp_extend_request(Frame frame, int iface_number)
+{
+
+}
+void ServerMachine::t_dhcp_timeout(ethernet_frame *announce)
+{
+
+}
 
