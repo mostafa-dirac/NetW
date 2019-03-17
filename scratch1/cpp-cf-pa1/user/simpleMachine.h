@@ -66,8 +66,8 @@ struct ethernet_header {
 struct ethernet_data {
 	byte  data_type;
 	byte  MAC[6];
-	uint32 IP;
-	uint32 time;
+	byte IP[4];
+	int time;
 } __attribute__ ((packed));
 
 struct ethernet_frame {
@@ -78,9 +78,15 @@ struct ethernet_frame {
 struct input_part {
 	dhcp_command_type c_type;
 	int time;
-	uint32 IP;
+	byte IP[4];
 	int mask;
 	int MAC;
+};
+
+struct save_packet {
+	byte MAC[6];
+	byte IP[4];
+	int time;
 };
 
 class SimpleMachine{
@@ -105,8 +111,10 @@ public:
 	bool sendFrame (Frame frame, int ifaceIndex);
 	std::vector<std::string> split(std::string str, char delimiter);
 	void make_up_uint32(std::string IP, input_part *temp);
-	void ip_ntop(uint32 IP);
-	bool factor_by_IP(const ethernet_frame *f1, const ethernet_frame *h2);
+	void ip_ntop(byte IP[4]);
+	//bool factor_by_IP(const ethernet_frame *f1, const ethernet_frame *h2);
+	void print_HEX_byte(byte b);
+	void mac_ntop(byte MAC[6]);
 
 };
 

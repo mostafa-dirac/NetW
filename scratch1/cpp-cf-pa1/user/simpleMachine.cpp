@@ -70,16 +70,34 @@ void SimpleMachine::make_up_uint32(std::string IP, input_part *temp){
 		(std::stoi(ip_bytes[3])));
 }
 
-void SimpleMachine::ip_ntop(uint32 IP){
-	auto b3 = static_cast<uint8_t>(IP & (uint32) 0xFF);
-	auto b2 = static_cast<uint8_t>((IP >> 8) & (uint32) 0xFF);
-	auto b1 = static_cast<uint8_t>((IP >> 16) & (uint32) 0xFF);
-	auto b0 = static_cast<uint8_t>((IP >> 24) & (uint32) 0xFF);
-
-	std::cout << b0 << "." << b1 << "." << b2 << "." << b3;
+void SimpleMachine::ip_ntop(byte IP[4]){
+//	auto b3 = static_cast<uint8_t>(IP & (uint32) 0xFF);
+//	auto b2 = static_cast<uint8_t>((IP >> 8) & (uint32) 0xFF);
+//	auto b1 = static_cast<uint8_t>((IP >> 16) & (uint32) 0xFF);
+//	auto b0 = static_cast<uint8_t>((IP >> 24) & (uint32) 0xFF);
+//	std::cout << b0 << "." << b1 << "." << b2 << "." << b3;
+	std::string output1 = std::to_string(IP[0]) + std::string(".") + std::to_string(IP[1]);
+	std::string output2 = std::to_string(IP[2]) + std::string(".") + std::to_string(IP[3]);
+	std::string output = output1 + std::string(".") + output2;
+	std::cout << output;
 }
-
-bool SimpleMachine::factor_by_IP(const ethernet_frame *f1, const ethernet_frame *f2)
+void SimpleMachine::mac_ntop(byte *MAC)
 {
-	return f2->data.IP > f1->data.IP;
+	for (int i = 0; i < 6; i++) {
+		print_HEX_byte(MAC[i]);
+	}
 }
+void SimpleMachine::print_HEX_byte(byte b)
+{
+	int mask = 0x0F;
+	char first = (char)TO_HEX((b >> 4) & mask);
+	char second = (char)TO_HEX(b & mask);
+	std::cout << first << second;
+}
+
+
+
+//bool SimpleMachine::factor_by_IP(const ethernet_frame *f1, const ethernet_frame *f2)
+//{
+//	return f2->data.IP > f1->data.IP;
+//}
