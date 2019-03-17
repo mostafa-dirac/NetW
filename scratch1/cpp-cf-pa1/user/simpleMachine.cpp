@@ -64,10 +64,11 @@ std::vector<std::string> SimpleMachine::split(std::string str, char delimiter)
 
 void SimpleMachine::make_up_uint32(std::string IP, input_part *temp){
 	std::vector<std::string> ip_bytes = split(IP, '.');
-	temp->IP = static_cast<uint32>((std::stoi(ip_bytes[0]) << 24) |
-		(std::stoi(ip_bytes[1]) << 16) |
-		(std::stoi(ip_bytes[2]) << 8) |
-		(std::stoi(ip_bytes[3])));
+	byte *arr_temp = new byte(4);
+	for (int i = 0; i < 4; i++) {
+		arr_temp[i] = (byte) stoi(ip_bytes[i]);
+	}
+	memcpy(temp, arr_temp, 4);  //TODO: Delete?
 }
 
 void SimpleMachine::ip_ntop(byte IP[4]){
