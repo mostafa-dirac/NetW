@@ -192,14 +192,14 @@ void ClientMachine::parse_input(input_part *input)
 		input->time = std::stoi(command_tok[4]);
 	} else if (std::regex_match(command, accept_offer)){
 		input->c_type = ACCEPT_OFFER_client;
-		make_up_uint32(command_tok[2], input);
+		make_up_uint32(command_tok[2], input->IP);
 		input->time = std::stoi(command_tok[5]);
 	} else if (std::regex_match(command, release)){
 		input->c_type = RELEASE_client;
-		make_up_uint32(command_tok[1], input);
+		make_up_uint32(command_tok[1], input->IP);
 	} else if (std::regex_match(command, extend_lease)){
 		input->c_type = EXTEND_LEASE_client;
-		make_up_uint32(command_tok[2], input);
+		make_up_uint32(command_tok[2], input->IP);
 		input->time = std::stoi(command_tok[5]);
 	} else if (std::regex_match(command, print_ip)){
 		input->c_type = PRINT_IP_client;

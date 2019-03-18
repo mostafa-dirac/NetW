@@ -30,6 +30,11 @@
 
 class ServerMachine: public SimpleMachine {
 public:
+
+	std::vector<byte*> ip_pool;
+	std::vector<ethernet_data*> offered_IPs;
+	std::vector<ethernet_data*> given_IPs;
+
 	ServerMachine (SimulatedMachine*, Interface* iface);
 	virtual ~ServerMachine ();
 
@@ -39,14 +44,15 @@ public:
 
 	void parse_admin_input (input_part *input);
 	void print_pool ();
-	void add_pool (uint32 IP, uint8_t mask);
+	void add_pool (byte *ip_ptr, uint8_t mask);
 	void add_time (int time);
 	void r_dhcp_discover (Frame frame, int iface_number);
 	void r_dhcp_request (Frame frame, int iface_number);
 	void r_dhcp_ack (Frame frame, int iface_number);
 	void r_dhcp_release (Frame frame, int iface_number);
 	void r_dhcp_extend_request (Frame frame, int iface_number);
-	void t_dhcp_timeout (ethernet_frame *announce);
+	void t_dhcp_timeout (ethernet_data *announce);
+	int find_ip_pool (byte *target_ip);
 
 };
 

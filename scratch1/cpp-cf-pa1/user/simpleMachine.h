@@ -79,7 +79,7 @@ struct input_part {
 	dhcp_command_type c_type;
 	int time;
 	byte IP[4];
-	int mask;
+	uint8_t mask;
 	int MAC;
 };
 
@@ -110,7 +110,7 @@ public:
 
 	bool sendFrame (Frame frame, int ifaceIndex);
 	std::vector<std::string> split(std::string str, char delimiter);
-	void make_up_uint32(std::string IP, input_part *temp);
+	void make_up_uint32(std::string IP, byte *temp);
 	void ip_ntop(byte IP[4]);
 	//bool factor_by_IP(const ethernet_frame *f1, const ethernet_frame *h2);
 	void print_HEX_byte(byte b);

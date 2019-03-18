@@ -62,7 +62,7 @@ std::vector<std::string> SimpleMachine::split(std::string str, char delimiter)
 	return internal;
 }
 
-void SimpleMachine::make_up_uint32(std::string IP, input_part *temp){
+void SimpleMachine::make_up_uint32(std::string IP, byte *temp){
 	std::vector<std::string> ip_bytes = split(IP, '.');
 	auto arr_temp = new byte(4);
 	for (int i = 0; i < 4; i++) {
