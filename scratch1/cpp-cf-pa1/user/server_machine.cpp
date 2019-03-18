@@ -207,6 +207,19 @@ void ServerMachine::add_time(int time)
 	for (auto &given_IP : given_IPs) {
 		given_IP->time -= time;
 	}
+	sort(given_IPs.begin(), given_IPs.end(), []
+	(const ethernet_data *a, const ethernet_data *b){
+		return a->time < b->time;
+	});
+	while (!given_IPs.empty()){
+		if (given_IPs[0]->time <= 0){
+			t_dhcp_timeout(given_IPs[0]);
+			ip_pool.push_back(given_IPs[0]->IP);
+			given_IPs.erase(given_IPs.begin());
+		}
+		else
+			return;
+	}
 }
 void ServerMachine::r_dhcp_discover(Frame frame, int iface_number)
 {
@@ -370,7 +383,22 @@ void ServerMachine::r_dhcp_extend_request(Frame frame, int iface_number)
 }
 void ServerMachine::t_dhcp_timeout(ethernet_data *announce)
 {
+	int count = getCountOfInterfaces();
+	for (int i = 0; i < count; i++){
+		auto data = new byte[SIZE_OF_FRAME - sizeof(uint32)];
+		auto ethz = (ethernet_frame *) data;
 
+		memset(ethz->header.dst, 255, 6);
+		memcpy(ethz->header.src, iface[i].mac, 6);
+		ethz->header.type = htons (0x0);
+
+		ethz->data.data_type = DHCP_TIMEOUT;
+		memcpy(ethz->data.MAC, announce->MAC, 6);
+		memcpy(ethz->data.IP, announce->IP, 4);
+
+		Frame timeout ((uint32)(SIZE_OF_FRAME - sizeof(uint32)), data);
+		sendFrame(timeout, i);
+	}
 }
 int ServerMachine::find_ip_pool(byte *target_ip)
 {
