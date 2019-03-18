@@ -139,23 +139,23 @@ void ClientMachine::parse_input(input_part *input)
 
 	if (regex_match(command, get_ip)){
 		input->c_type = GET_IP;
-		input->time = (uint32)stoi(command_tok[4]);
+		input->time = stoi(command_tok[4]);
 	} else if (regex_match(command, accept_offer)){
 		input->c_type = ACCEPT_OFFER;
 		make_up_uint32(command_tok[2], input->IP);
-		input->time = (uint32)stoi(command_tok[5]);
+		input->time = stoi(command_tok[5]);
 	} else if (regex_match(command, release)){
 		input->c_type = RELEASE;
 		make_up_uint32(command_tok[1], input->IP);
 	} else if (regex_match(command, extend_lease)){
 		input->c_type = EXTEND_LEASE;
 		make_up_uint32(command_tok[2], input->IP);
-		input->time = (uint32)stoi(command_tok[5]);
+		input->time = stoi(command_tok[5]);
 	} else if (regex_match(command, print_ip)){
 		input->c_type = PRINT_IP;
 	}
 }
-void ClientMachine::t_dhcp_discover(uint32 requested_time)
+void ClientMachine::t_dhcp_discover(int requested_time)
 {
 	int count = getCountOfInterfaces();
 	for (int i = 0; i < count; i++) {
@@ -167,7 +167,7 @@ void ClientMachine::t_dhcp_discover(uint32 requested_time)
 		ethz->data.data_type = DHCP_DISCOVER;
 		memcpy(ethz->data.MAC, iface[0].mac, 6);
 		memset(ethz->data.IP, 0, 4);
-		ethz->data.time = htonl(requested_time);
+		ethz->data.time = htonl((uint32)requested_time);
 		Frame frame ((uint32) SIZE_OF_FRAME, frame_data);
 		sendFrame(frame, i);
 
@@ -193,7 +193,7 @@ void ClientMachine::r_dhcp_offer(Frame frame)
 	ip_ntop(ethz->data.IP);
 	cout << " for time " << ethz->data.time << endl;
 }
-void ClientMachine::accept_dhcp_offer(byte IP[4], uint32 requested_time)
+void ClientMachine::accept_dhcp_offer(byte IP[4], int requested_time)
 {
 	for (auto itr = this->offers.begin(); itr < this->offers.end(); itr++){
 		if (memcmp((*itr)->IP, IP, 4) == 0){
@@ -205,7 +205,7 @@ void ClientMachine::accept_dhcp_offer(byte IP[4], uint32 requested_time)
 		}
 	}
 }
-void ClientMachine::t_dhcp_request(byte IP[4], uint32 requested_time)
+void ClientMachine::t_dhcp_request(byte IP[4], int requested_time)
 {
 	int count = getCountOfInterfaces();
 	for (int i = 0; i < count; i++){
@@ -283,7 +283,7 @@ void ClientMachine::t_dhcp_release(byte *IP)
 //{
 //
 //}
-void ClientMachine::t_dhcp_extend_request(byte *IP, uint32 requested_time)
+void ClientMachine::t_dhcp_extend_request(byte *IP, int requested_time)
 {
 	if (memcmp(current_ip.IP, IP, 4) == 0){
 //		t_dhcp_extend_request(IP, requested_time);
@@ -297,7 +297,7 @@ void ClientMachine::t_dhcp_extend_request(byte *IP, uint32 requested_time)
 			ethz->data.data_type = DHCP_REQUEST_EXTEND;
 			memcpy(ethz->data.MAC, iface[0].mac, 6);
 			memcpy(ethz->data.IP, IP, 4);
-			ethz->data.time = htonl(requested_time);
+			ethz->data.time = htonl((uint32)requested_time);
 
 			Frame frame ((uint32) SIZE_OF_FRAME, data);
 			sendFrame(frame, i);
