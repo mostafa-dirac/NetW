@@ -67,7 +67,7 @@ struct ethernet_data {
 	byte  data_type;
 	byte  MAC[6];
 	byte IP[4];
-	int time;
+	uint32 time;
 } __attribute__ ((packed));
 
 struct ethernet_frame {
@@ -115,7 +115,7 @@ public:
 	//bool factor_by_IP(const ethernet_frame *f1, const ethernet_frame *h2);
 	void print_HEX_byte(byte b);
 	void mac_ntop(byte MAC[6]);
-	//TODO: int find_IP(std::vector<saved_packet*> array, saved_packet* elem);
+	int find_IP(std::vector<ethernet_data*> array, ethernet_frame* elem);
 
 
 };

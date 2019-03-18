@@ -64,7 +64,7 @@ std::vector<std::string> SimpleMachine::split(std::string str, char delimiter)
 
 void SimpleMachine::make_up_uint32(std::string IP, input_part *temp){
 	std::vector<std::string> ip_bytes = split(IP, '.');
-	byte *arr_temp = new byte(4);
+	auto arr_temp = new byte(4);
 	for (int i = 0; i < 4; i++) {
 		arr_temp[i] = (byte) stoi(ip_bytes[i]);
 	}
@@ -91,9 +91,18 @@ void SimpleMachine::mac_ntop(byte *MAC)
 void SimpleMachine::print_HEX_byte(byte b)
 {
 	int mask = 0x0F;
-	char first = (char)TO_HEX((b >> 4) & mask);
-	char second = (char)TO_HEX(b & mask);
+	auto first = (char)TO_HEX((b >> 4) & mask);
+	auto second = (char)TO_HEX(b & mask);
 	std::cout << first << second;
+}
+int SimpleMachine::find_IP(std::vector<ethernet_data *> array, ethernet_frame *elem)
+{
+	for (int i = 0; i < array.size(); ++i) {
+		if (memcmp(array[i]->IP, elem->data.IP, 4) == 0){
+			return i;
+		}
+	}
+	return -1;
 }
 
 

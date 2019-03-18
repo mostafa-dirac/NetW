@@ -82,21 +82,21 @@ void ClientMachine::processFrame (Frame frame, int ifaceIndex) {
 	cerr << "Ethernet type field is 0x" << std::hex << ntohs (eth->type) << endl;*/
 	auto frame_data = (ethernet_frame *) frame.data;
 
-	if (frame_data->data.MAC != iface[0].mac){
+	if (memcmp(frame_data->data.MAC, iface[0].mac, 6) != 0){
 		nazri(frame, ifaceIndex);
 	} else {
 		switch (frame_data->data.data_type){
 			case DHCP_OFFER:
-				r_dhcp_offer(frame, ifaceIndex);
+				r_dhcp_offer(frame);
 				break;
 			case DHCP_ACK:
 				r_dhcp_ack(frame, ifaceIndex);
 				break;
 			case DHCP_TIMEOUT:
-				r_dhcp_timeout(frame, ifaceIndex);
+				r_dhcp_timeout(frame);
 				break;
 			case DHCP_RESPONSE_EXTEND:
-				r_dhcp_extend_response(frame, ifaceIndex);
+				r_dhcp_extend_response(frame);
 				break;
 			default:
 				cout << "invalid packet, dropped" << endl;
@@ -216,7 +216,7 @@ void ClientMachine::t_dhcp_discover(int requested_time)
 		ethz->header.type = htons(0x0);
 		ethz->data.data_type = DHCP_DISCOVER;
 		memcpy(ethz->data.MAC, iface[0].mac, 6);
-		ethz->data.IP = 0;
+		memset(ethz->data.IP, 0, 4);
 		ethz->data.time = htonl((uint32)requested_time);
 		Frame frame ((uint32) SIZE_OF_FRAME, frame_data);
 		sendFrame(frame, i);
@@ -224,21 +224,30 @@ void ClientMachine::t_dhcp_discover(int requested_time)
 		delete[] ethz;
 	}
 }
-void ClientMachine::r_dhcp_offer(Frame frame, int iface_number)
+void ClientMachine::r_dhcp_offer(Frame frame)
 {
 	auto ethz = (ethernet_frame *) frame.data;
-	if (memcmp(ethz->data.MAC, iface[0].mac, 6) == 0){
-		offers.push_back(ethz);
-		cout << "new offer: ";
-		ip_ntop(ethz->data.IP);
-		cout << " for time " << ethz->data.time << endl;
+	ethz->data.time = ntohl(ethz->data.time);
+	int idx = find_IP(offers, ethz);
+	if (idx == -1) {
+		auto new_ptr = new ethernet_data;
+		memcpy(new_ptr->IP, ethz->data.IP, 4);
+		memcpy(new_ptr->MAC, ethz->data.MAC, 6);
+		new_ptr->time = ethz->data.time;
+		new_ptr->data_type = 0;
+		offers.push_back(new_ptr);
 	}
+	else
+		offers[idx]->time = ethz->data.time;;
+	cout << "new offer: ";
+	ip_ntop(ethz->data.IP);
+	cout << " for time " << ethz->data.time << endl;
 }
-void ClientMachine::accept_dhcp_offer(uint32 IP, int requested_time)
+void ClientMachine::accept_dhcp_offer(byte IP[4], int requested_time)
 {
 	for (auto itr = this->offers.begin(); itr < this->offers.end(); itr++){
-		if ((*itr)->data.IP == IP){
-			if ((*itr)->data.time >= requested_time)
+		if (memcmp((*itr)->IP, IP, 4) == 0){
+			if ((*itr)->time >= requested_time)
 				t_dhcp_request(IP, requested_time);
 			else
 				cout << "invalid offer" << endl;
@@ -246,7 +255,7 @@ void ClientMachine::accept_dhcp_offer(uint32 IP, int requested_time)
 		}
 	}
 }
-void ClientMachine::t_dhcp_request(uint32 IP, int requested_time)
+void ClientMachine::t_dhcp_request(byte IP[4], int requested_time)
 {
 	int count = getCountOfInterfaces();
 	for (int i = 0; i < count; i++){
@@ -257,7 +266,8 @@ void ClientMachine::t_dhcp_request(uint32 IP, int requested_time)
 		ethz->header.type = htons(0x0);
 		ethz->data.data_type = DHCP_REQUEST;
 		memcpy(ethz->data.MAC, iface[0].mac, 6); //TODO
-		ethz->data.IP = IP; //htonl(IP);
+//		ethz->data.IP = IP;
+		memcpy(ethz->data.IP, IP, 4);
 		ethz->data.time = htonl((uint32)requested_time);
 		Frame frame ((uint32) SIZE_OF_FRAME, frame_data);
 		sendFrame(frame, i);
@@ -267,42 +277,57 @@ void ClientMachine::t_dhcp_request(uint32 IP, int requested_time)
 void ClientMachine::r_dhcp_ack(Frame frame, int iface_number)
 {
 	auto frame_data = (ethernet_frame*) frame.data;
-	if (current_ip != nullptr)
-		old_IPs.push_back(current_ip);
-	current_ip = frame_data;
+	frame_data->data.time = ntohl(frame_data->data.time);
+	if (find_IP(old_IPs, frame_data) == -1){
+		auto new_ptr = new ethernet_data;
+		memcpy(new_ptr->IP, frame_data->data.IP, 4);
+		memcpy(new_ptr->MAC, frame_data->data.MAC, 6);
+		new_ptr->time = frame_data->data.time;
+		new_ptr->data_type = 0;
+		old_IPs.push_back(new_ptr);
+	}
+	memcpy(current_ip.IP, frame_data->data.IP, 4);
+//	if (current_ip != nullptr)
+//		old_IPs.push_back(current_ip);
+//	current_ip = frame_data;
 
 	cout << "now my ip is ";
 	ip_ntop(frame_data->data.IP);
 	cout << " for time " << frame_data->data.time << endl;
-
-	int count = getCountOfInterfaces();
-	for (int i = 0; i < count; i++){
-		if (i != iface_number){
-			sendFrame(frame, i);
-		}
-	}
+	nazri(frame, iface_number);
+//	int count = getCountOfInterfaces();
+//	for (int i = 0; i < count; i++){
+//		if (i != iface_number){
+//			sendFrame(frame, i);
+//		}
+//	}
 
 }
-void ClientMachine::r_dhcp_timeout(Frame frame, int iface_number)
+void ClientMachine::r_dhcp_timeout(Frame frame)
 {
 	auto frame_data = (ethernet_frame *) frame.data;
-	if (frame_data->data.IP == current_ip->data.IP){
-		old_IPs.push_back(current_ip);
-		current_ip = nullptr;
+	frame_data->data.time = ntohl(frame_data->data.time);
+
+	if (memcmp(current_ip.IP, frame_data->data.IP, 4) == 0){    //TODO
+		memset(current_ip.IP, 0, 4);
 		cout << "ip released" << endl;
-		return;
 	}
+//	if (frame_data->data.IP == current_ip->data.IP){
+//		old_IPs.push_back(current_ip);
+//		current_ip = nullptr;
+//		cout << "ip released" << endl;
+//		return;
+//	}
 }
-void ClientMachine::release_ip(uint32 IP)
+void ClientMachine::release_ip(byte IP[4])
 {
-	if (IP == current_ip->data.IP){
+	if (memcmp(current_ip.IP, IP, 4) == 0){
+		memset(current_ip.IP, 0, 4);
 		t_dhcp_release(IP);
 		cout << "ip released" << endl;
-		old_IPs.push_back(current_ip);
-		return;
 	}
 }
-void ClientMachine::t_dhcp_release(uint32 IP)
+void ClientMachine::t_dhcp_release(byte IP[4])
 {
 	int count = getCountOfInterfaces();
 	for (int i = 0; i < count; i++) {
@@ -314,8 +339,9 @@ void ClientMachine::t_dhcp_release(uint32 IP)
 		ethz->header.type = htons(0x0);
 		ethz->data.data_type = DHCP_RELEASE;
 		memcpy(ethz->data.MAC, iface[0].mac, 6);
-		ethz->data.IP = IP; //htonl(IP);
-		ethz->data.time = 0;
+		memcpy(ethz->data.IP, IP, 4);
+//		ethz->data.IP = IP; //htonl(IP);
+		ethz->data.time = htonl(0);
 
 		Frame frame ((uint32) SIZE_OF_FRAME, data);
 		sendFrame(frame, i);
@@ -323,15 +349,14 @@ void ClientMachine::t_dhcp_release(uint32 IP)
 		delete[] data;
 	}
 }
-void ClientMachine::extend_lease(uint32 IP, int requested_time)
+void ClientMachine::extend_lease(byte IP[4], int requested_time)
 {
-	if (IP == current_ip->data.IP){
+	if (memcmp(current_ip.IP, IP, 4) == 0){
 		t_dhcp_extend_request(IP, requested_time);
-		old_IPs.push_back(current_ip);
-		current_ip = nullptr;
+		memset(current_ip.IP, 0, 4);
 	}
 }
-void ClientMachine::t_dhcp_extend_request(uint32 IP, int requested_time)
+void ClientMachine::t_dhcp_extend_request(byte IP[4], int requested_time)
 {
 	int count = getCountOfInterfaces();
 	for (int i = 0; i < count; i++) {
@@ -342,7 +367,8 @@ void ClientMachine::t_dhcp_extend_request(uint32 IP, int requested_time)
 		ethz->header.type = htons(0x0);
 		ethz->data.data_type = DHCP_REQUEST_EXTEND;
 		memcpy(ethz->data.MAC, iface[0].mac, 6);
-		ethz->data.IP = IP; //htonl(IP);
+		memcpy(ethz->data.IP, IP, 4);
+//		ethz->data.IP = IP; //htonl(IP);
 		ethz->data.time = htonl((uint32)requested_time);
 
 		Frame frame ((uint32) SIZE_OF_FRAME, data);
@@ -352,11 +378,21 @@ void ClientMachine::t_dhcp_extend_request(uint32 IP, int requested_time)
 	}
 }
 
-void ClientMachine::r_dhcp_extend_response(Frame frame, int iface_number)
+void ClientMachine::r_dhcp_extend_response(Frame frame)
 {
 	auto frame_data = (ethernet_frame*) frame.data;
-	//TODO TODO
-	current_ip = frame_data;
+	frame_data->data.time = ntohl(frame_data->data.time);
+
+	if (find_IP(old_IPs, frame_data) == -1){
+		auto new_ptr = new ethernet_data;
+		memcpy(new_ptr->IP, frame_data->data.IP, 4);
+		memcpy(new_ptr->MAC, frame_data->data.MAC, 6);
+		new_ptr->time = frame_data->data.time;
+		new_ptr->data_type = 0;
+		old_IPs.push_back(new_ptr);
+	}
+	memcpy(current_ip.IP, frame_data->data.IP, 4);
+//	current_ip = frame_data;
 	cout << "now my ip is ";
 	ip_ntop(frame_data->data.IP);
 	cout << " for time " << frame_data->data.time << endl;
@@ -374,14 +410,14 @@ void ClientMachine::nazri(Frame frame, int src_iface)
 
 void ClientMachine::handle_ip_list()
 {
-	old_IPs.push_back(current_ip);
-	std::sort(old_IPs.begin(), old_IPs.end(), [](const ethernet_frame* f1, const ethernet_frame* f2) {return f1->data.IP < f2->data.IP;});
+//	old_IPs.push_back(current_ip);
+	std::sort(old_IPs.begin(), old_IPs.end(), [](const ethernet_data* f1, const ethernet_data* f2) {return f1->IP < f2->IP;});
 	auto count = (int) old_IPs.size();
 	for (int i = 0; i < count; i++) {
-		ip_ntop(old_IPs[i]->data.IP);
+		ip_ntop(old_IPs[i]->IP);
 		cout << endl;
 	}
-	old_IPs.erase(find(old_IPs.begin(), old_IPs.end(), current_ip));
+//	old_IPs.erase(find(old_IPs.begin(), old_IPs.end(), current_ip));
 //	ip_ntop(current_ip->data.IP);
 //	cout << endl;
 }
