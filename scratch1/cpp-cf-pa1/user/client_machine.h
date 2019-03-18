@@ -42,15 +42,15 @@ public:
 	virtual void run ();
 	virtual void processFrame (Frame frame, int ifaceIndex);
 
-	void t_dhcp_discover (int requested_time);
+	void t_dhcp_discover (uint32 requested_time);
 	void r_dhcp_offer (Frame frame);
-	void accept_dhcp_offer (byte IP[4], int requested_time);
-	void t_dhcp_request (byte IP[4], int requested_time);
+	void accept_dhcp_offer (byte IP[4], uint32 requested_time);
+	void t_dhcp_request (byte IP[4], uint32 requested_time);
 	void r_dhcp_ack (Frame frame, int iface_number);
 	void t_dhcp_release(byte *IP);
 //	void t_dhcp_release (byte IP[4]);
 	void r_dhcp_timeout (Frame frame);
-	void t_dhcp_extend_request(byte *IP, int requested_time);
+	void t_dhcp_extend_request(byte *IP, uint32 requested_time);
 //	void t_dhcp_extend_request (byte IP[4], int requested_time);
 	void r_dhcp_extend_response (Frame frame);
 	void handle_ip_list ();

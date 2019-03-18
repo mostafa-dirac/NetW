@@ -134,7 +134,7 @@ void ServerMachine::parse_admin_input(input_part *input_info)
 		input_info->mask = (uint8_t)stoi(temp[1]);
 	} else if (regex_match(command, add_time)){
 		input_info->c_type = ADD_TIME;
-		input_info->time = stoi(command_info[2]);
+		input_info->time = (uint32)stoi(command_info[2]);
 	} else if (regex_match(command, print_pool)){
 		input_info->c_type = PRINT_POOL;
 	}
@@ -364,7 +364,8 @@ void ServerMachine::t_dhcp_timeout(ethernet_data *announce)
 }
 int ServerMachine::find_ip_pool(byte *target_ip)
 {
-	for (int i = 0; i < ip_pool.size(); ++i) {
+	auto count = (int)ip_pool.size();
+	for (int i = 0; i < count; ++i) {
 		if (memcmp(ip_pool[i], target_ip, 4) == 0){
 			return i;
 		}
