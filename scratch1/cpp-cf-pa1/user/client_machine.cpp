@@ -178,7 +178,6 @@ void ClientMachine::parse_input(input_part *input)
 
 	std::string command;
 	getline(std::cin, command);
-	cout << command;
 	std::vector<std::string> command_tok = split(command, ' ');
 
 	std::regex get_ip("get ip for time .*");
