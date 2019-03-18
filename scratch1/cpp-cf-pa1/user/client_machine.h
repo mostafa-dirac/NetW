@@ -47,11 +47,11 @@ public:
 	void accept_dhcp_offer (byte IP[4], int requested_time);
 	void t_dhcp_request (byte IP[4], int requested_time);
 	void r_dhcp_ack (Frame frame, int iface_number);
-	void release_ip (byte IP[4]);
-	void t_dhcp_release (byte IP[4]);
+	void t_dhcp_release(byte *IP);
+//	void t_dhcp_release (byte IP[4]);
 	void r_dhcp_timeout (Frame frame);
-	void extend_lease(byte IP[4], int requested_time);
-	void t_dhcp_extend_request (byte IP[4], int requested_time);
+	void t_dhcp_extend_request(byte *IP, int requested_time);
+//	void t_dhcp_extend_request (byte IP[4], int requested_time);
 	void r_dhcp_extend_response (Frame frame);
 	void handle_ip_list ();
 	void parse_input (input_part *input);
