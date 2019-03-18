@@ -290,7 +290,7 @@ void ClientMachine::r_dhcp_ack(Frame frame, int iface_number)
 //		old_IPs.push_back(current_ip);
 //	current_ip = frame_data;
 
-	cout << "now my ip is ";
+	cout << "now my ip is: ";
 	ip_ntop(frame_data->data.IP);
 	cout << " for time " << frame_data->data.time << endl;
 	nazri(frame, iface_number);

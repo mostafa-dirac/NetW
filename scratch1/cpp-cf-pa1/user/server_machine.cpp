@@ -178,7 +178,15 @@ void ServerMachine::parse_admin_input(input_part *input_info)
 }
 void ServerMachine::print_pool()
 {
+	sort(ip_pool.begin(), ip_pool.end(),
+	     [](const byte *a, const byte *b){
+		     return (a[0] < b[0])?true:(a[1] < b[1]? true:(a[2] < b[2]? true:a[3] < b[3]));
+	});
 
+	for (auto &i : ip_pool) {
+		ip_ntop(i);
+		cout << endl;
+	}
 }
 void ServerMachine::add_pool(byte *ip_ptr, uint8_t mask)
 {
@@ -196,7 +204,9 @@ void ServerMachine::add_pool(byte *ip_ptr, uint8_t mask)
 }
 void ServerMachine::add_time(int time)
 {
-
+	for (auto &given_IP : given_IPs) {
+		given_IP->time -= time;
+	}
 }
 void ServerMachine::r_dhcp_discover(Frame frame, int iface_number)
 {
@@ -215,7 +225,7 @@ void ServerMachine::r_dhcp_discover(Frame frame, int iface_number)
 		memcpy(ethz->data.MAC, frame_data->data.MAC, 6);
 		sort(ip_pool.begin(), ip_pool.end(),
 			[](const byte *a, const byte *b){
-				return (a[3] < b[3])?true:(a[2] < b[2]? true:(a[1] < b[1]? true:a[0] < b[0]));
+				return (a[0] < b[0])?true:(a[1] < b[1]? true:(a[2] < b[2]? true:a[3] < b[3]));
 		});
 		memcpy(ethz->data.IP, ip_pool[0], 4);
 		ethz->data.time = (frame_data->data.time == 0) ? 10 :frame_data->data.time;
@@ -241,19 +251,122 @@ void ServerMachine::r_dhcp_discover(Frame frame, int iface_number)
 }
 void ServerMachine::r_dhcp_request(Frame frame, int iface_number)
 {
+	auto frame_data = (ethernet_frame *) frame.data;
+	frame_data->data.time = ntohl(frame_data->data.time);
+	auto itr = find_if(offered_IPs.begin(), offered_IPs.end(), [frame_data](const ethernet_data* a){
+		return (memcmp(a->IP, frame_data->data.IP, 4) == 0);
+	});
+	//TODO : SHAHKAR.
+	if (itr != offered_IPs.end()){
+		auto data = new byte[SIZE_OF_FRAME];
+		auto ethz = (ethernet_frame *) data;
 
+		memset(ethz->header.dst, 255, 6);
+		memcpy(ethz->header.src, iface[iface_number].mac, 6);
+		ethz->header.type = htons (0x0);
+
+		ethz->data.data_type = DHCP_ACK;
+		memcpy(ethz->data.MAC, frame_data->data.MAC, 6);
+		memcpy(ethz->data.IP, frame_data->data.IP, 4);
+		ethz->data.time = (frame_data->data.time == 0) ? 10 : frame_data->data.time;
+
+		cout << "assign ";
+		ip_ntop(ethz->data.IP);
+		cout << " to ";
+		mac_ntop(ethz->data.MAC);
+		cout << " for " << ethz->data.time << endl;
+
+		auto inst = new ethernet_data;  //TODO : SHAHKAR2
+		inst->time = ethz->data.time;
+		memcpy(inst->IP, ethz->data.IP, 4);
+		memcpy(inst->MAC, ethz->data.MAC, 6);
+		given_IPs.push_back(inst);
+		offered_IPs.erase(itr);         //TODO : SHAHKAR3
+
+		ethz->data.time = htonl(ethz->data.time);
+		Frame ack ((uint32) SIZE_OF_FRAME, data);
+		sendFrame(ack, iface_number);
+		delete[] data;
+	}
 }
 void ServerMachine::r_dhcp_ack(Frame frame, int iface_number)
 {
-
+	auto frame_data = (ethernet_frame *) frame.data;
+	frame_data->data.time = ntohl(frame_data->data.time);
+	auto itr = find_if(offered_IPs.begin(), offered_IPs.end(),
+		[frame_data](const ethernet_data* a){
+			return memcmp(a->MAC, frame_data->data.MAC, 6) == 0;
+	});
+	if (itr != offered_IPs.end()){
+		ip_ntop((*itr)->IP);
+		cout << " back to pool" << endl;
+		ip_pool.push_back((*itr)->IP);
+		offered_IPs.erase(itr);
+	}
 }
 void ServerMachine::r_dhcp_release(Frame frame, int iface_number)
 {
-
+	auto frame_data = (ethernet_frame *) frame.data;
+	frame_data->data.time = ntohl(frame_data->data.time);
+	auto itr = find_if(given_IPs.begin(), given_IPs.end(),[frame_data]
+	(const ethernet_data* a){
+		return memcmp(a->IP, frame_data->data.IP, 4) == 0;
+	});
+	if (itr != given_IPs.end()){
+		ip_pool.push_back(frame_data->data.IP);
+		given_IPs.erase(itr);
+	}
 }
 void ServerMachine::r_dhcp_extend_request(Frame frame, int iface_number)
 {
+	auto frame_data = (ethernet_frame *) frame.data;
+	frame_data->data.time = ntohl(frame_data->data.time);
+	auto itr = find_if(given_IPs.begin(), given_IPs.end(),[frame_data]
+		(const ethernet_data* a){
+		return memcmp(a->IP, frame_data->data.IP, 4) == 0;
+	});
+	if (itr != given_IPs.end()){
+		uint32 another_time = (frame_data->data.time == 0)?
+			(*itr)->time + 10:
+			(*itr)->time + frame_data->data.time;
+		ip_pool.push_back(frame_data->data.IP);
+		given_IPs.erase(itr);
 
+		auto data = new byte[SIZE_OF_FRAME];
+		auto ethz = (ethernet_frame *) data;
+
+		memset(ethz->header.dst, 255, 6);
+		memcpy(ethz->header.src, iface[iface_number].mac, 6);
+		ethz->header.type = htons (0x0);
+
+		ethz->data.data_type = DHCP_RESPONSE_EXTEND;
+		memcpy(ethz->data.MAC, frame_data->data.MAC, 6);
+		memcpy(ethz->data.IP, frame_data->data.IP, 4);
+		sort(ip_pool.begin(), ip_pool.end(),
+		     [](const byte *a, const byte *b){
+			     return (a[0] < b[0])?true:(a[1] < b[1]? true:(a[2] < b[2]? true:a[3] < b[3]));
+		});
+		memcpy(ethz->data.IP, ip_pool[0], 4);
+		ethz->data.time = another_time;
+
+		ip_pool.erase(ip_pool.begin());
+		auto inst = new ethernet_data;
+		inst->time = ethz->data.time;
+		memcpy(inst->IP, ethz->data.IP, 4);
+		memcpy(inst->MAC, ethz->data.MAC, 6);
+		given_IPs.push_back(inst);
+		cout << "assign ";
+		ip_ntop(ethz->data.IP);
+		cout << " to ";
+		mac_ntop(ethz->data.MAC);
+		cout << " for " << ethz->data.time << endl;
+
+		ethz->data.time = htonl(ethz->data.time);
+		Frame shot ((uint32) SIZE_OF_FRAME, data);
+		sendFrame(shot, iface_number);
+
+		delete[] data;
+	}
 }
 void ServerMachine::t_dhcp_timeout(ethernet_data *announce)
 {
