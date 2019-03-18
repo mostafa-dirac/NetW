@@ -72,11 +72,6 @@ void SimpleMachine::make_up_uint32(std::string IP, byte *temp){
 }
 
 void SimpleMachine::ip_ntop(byte IP[4]){
-//	auto b3 = static_cast<uint8_t>(IP & (uint32) 0xFF);
-//	auto b2 = static_cast<uint8_t>((IP >> 8) & (uint32) 0xFF);
-//	auto b1 = static_cast<uint8_t>((IP >> 16) & (uint32) 0xFF);
-//	auto b0 = static_cast<uint8_t>((IP >> 24) & (uint32) 0xFF);
-//	std::cout << b0 << "." << b1 << "." << b2 << "." << b3;
 	std::string output1 = std::to_string(IP[0]) + std::string(".") + std::to_string(IP[1]);
 	std::string output2 = std::to_string(IP[2]) + std::string(".") + std::to_string(IP[3]);
 	std::string output = output1 + std::string(".") + output2;
@@ -104,10 +99,3 @@ int SimpleMachine::find_IP(std::vector<ethernet_data *> array, ethernet_frame *e
 	}
 	return -1;
 }
-
-
-
-//bool SimpleMachine::factor_by_IP(const ethernet_frame *f1, const ethernet_frame *f2)
-//{
-//	return f2->data.IP > f1->data.IP;
-//}

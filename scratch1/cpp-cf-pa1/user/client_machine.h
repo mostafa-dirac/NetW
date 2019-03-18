@@ -55,7 +55,7 @@ public:
 	void r_dhcp_extend_response (Frame frame);
 	void handle_ip_list ();
 	void parse_input (input_part *input);
-	void nazri (Frame frame, int src_iface);
+	void distribute(Frame frame, int src_iface);
 
 };
 

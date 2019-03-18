@@ -69,21 +69,9 @@ void ClientMachine::initialize () {
  * </code>
  */
 void ClientMachine::processFrame (Frame frame, int ifaceIndex) {
-	// TODO: process the raw frame; frame.data points to the frame's byte stream
-	/*cerr << "Frame received at iface " << ifaceIndex <<
-	     " with length " << frame.length << endl;
-	struct ethernet_header {
-		byte  dst[6];
-		byte  src[6];
-		uint16 type;
-	} __attribute__ ((packed));
-
-	ethernet_header *eth = (ethernet_header *) frame.data;
-	cerr << "Ethernet type field is 0x" << std::hex << ntohs (eth->type) << endl;*/
 	auto frame_data = (ethernet_frame *) frame.data;
-
 	if (memcmp(frame_data->data.MAC, iface[0].mac, 6) != 0){
-		nazri(frame, ifaceIndex);
+		distribute(frame, ifaceIndex);
 	} else {
 		switch (frame_data->data.data_type){
 			case DHCP_OFFER:
@@ -110,61 +98,24 @@ void ClientMachine::processFrame (Frame frame, int ifaceIndex) {
  * Returning from this method will not finish the execution of the program.
  */
 void ClientMachine::run () {
-	// TODO: write your business logic here...
-//	struct ethernet_header {
-//		byte  dst[6];
-//		byte  src[6];
-//		uint16 type;
-//	} __attribute__ ((packed));
-//
-//	struct ethernet_data {
-//		byte  data_type;
-//		byte  MAC[6];
-//		uint32 IP;
-//		int time;
-//	} __attribute__ ((packed));
-//
-//	struct header {
-//		ethernet_header header;
-//		ethernet_data data;
-//	} __attribute__ ((packed));
-
-	/*const int frameLength = sizeof (ethernet_header) + 100;
-	byte *data = new byte[frameLength];
-
-	ethernet_header *eth = (ethernet_header *) data;
-	memset (eth->dst, 255, 6); // broadcast address
-	memcpy (eth->src, iface[0].mac, 6);
-	eth->type = htons (0x0800);
-
-	iphdr *packet = (iphdr *) (data + sizeof (ethernet_header));
-	packet->version = 4;
-	packet->ihl = 5;
-	packet->tot_len = htons (100);
-
-	Frame frame (frameLength, data);
-	sendFrame (frame, 0); // sends frame on interface 0
-
-	delete[] data;
-	cerr << "now ./free.sh and check the pcap log file to see the sent packet" << endl; */
 	for (;;) {
 		auto input = new input_part;
 		parse_input(input);
 
 		switch (input->c_type){
-			case GET_IP_client:
+			case GET_IP:
 				t_dhcp_discover(input->time);
 				break;
-			case ACCEPT_OFFER_client:
+			case ACCEPT_OFFER:
 				accept_dhcp_offer(input->IP, input->time);
 				break;
-			case RELEASE_client:
+			case RELEASE:
 				release_ip(input->IP);
 				break;
-			case EXTEND_LEASE_client:
+			case EXTEND_LEASE:
 				extend_lease(input->IP, input->time);
 				break;
-			case PRINT_IP_client:
+			case PRINT_IP:
 				handle_ip_list();
 				break;
 			default:
@@ -176,32 +127,32 @@ void ClientMachine::parse_input(input_part *input)
 {
 	memset(input, 0, sizeof(input_part));
 
-	std::string command;
-	getline(std::cin, command);
-	std::vector<std::string> command_tok = split(command, ' ');
+	string command;
+	getline(cin, command);
+	vector<string> command_tok = split(command, ' ');
 
-	std::regex get_ip("get ip for time .*");
-	std::regex accept_offer("accept offer: .*");
-	std::regex release("release .*");
-	std::regex extend_lease("extend lease .*");
-	std::regex print_ip("print ip");
+	regex get_ip("get ip for time .*");
+	regex accept_offer("accept offer: .*");
+	regex release("release .*");
+	regex extend_lease("extend lease .*");
+	regex print_ip("print ip");
 
-	if (std::regex_match(command, get_ip)){
-		input->c_type = GET_IP_client;
-		input->time = std::stoi(command_tok[4]);
-	} else if (std::regex_match(command, accept_offer)){
-		input->c_type = ACCEPT_OFFER_client;
+	if (regex_match(command, get_ip)){
+		input->c_type = GET_IP;
+		input->time = stoi(command_tok[4]);
+	} else if (regex_match(command, accept_offer)){
+		input->c_type = ACCEPT_OFFER;
 		make_up_uint32(command_tok[2], input->IP);
-		input->time = std::stoi(command_tok[5]);
-	} else if (std::regex_match(command, release)){
-		input->c_type = RELEASE_client;
+		input->time = stoi(command_tok[5]);
+	} else if (regex_match(command, release)){
+		input->c_type = RELEASE;
 		make_up_uint32(command_tok[1], input->IP);
-	} else if (std::regex_match(command, extend_lease)){
-		input->c_type = EXTEND_LEASE_client;
+	} else if (regex_match(command, extend_lease)){
+		input->c_type = EXTEND_LEASE;
 		make_up_uint32(command_tok[2], input->IP);
-		input->time = std::stoi(command_tok[5]);
-	} else if (std::regex_match(command, print_ip)){
-		input->c_type = PRINT_IP_client;
+		input->time = stoi(command_tok[5]);
+	} else if (regex_match(command, print_ip)){
+		input->c_type = PRINT_IP;
 	}
 }
 void ClientMachine::t_dhcp_discover(int requested_time)
@@ -264,8 +215,7 @@ void ClientMachine::t_dhcp_request(byte IP[4], int requested_time)
 		memcpy(ethz->header.src, iface[i].mac, 6);
 		ethz->header.type = htons(0x0);
 		ethz->data.data_type = DHCP_REQUEST;
-		memcpy(ethz->data.MAC, iface[0].mac, 6); //TODO
-//		ethz->data.IP = IP;
+		memcpy(ethz->data.MAC, iface[0].mac, 6);
 		memcpy(ethz->data.IP, IP, 4);
 		ethz->data.time = htonl((uint32)requested_time);
 		Frame frame ((uint32) SIZE_OF_FRAME, frame_data);
@@ -273,6 +223,7 @@ void ClientMachine::t_dhcp_request(byte IP[4], int requested_time)
 		delete[] frame_data;
 	}
 }
+
 void ClientMachine::r_dhcp_ack(Frame frame, int iface_number)
 {
 	auto frame_data = (ethernet_frame*) frame.data;
@@ -286,37 +237,22 @@ void ClientMachine::r_dhcp_ack(Frame frame, int iface_number)
 		old_IPs.push_back(new_ptr);
 	}
 	memcpy(current_ip.IP, frame_data->data.IP, 4);
-//	if (current_ip != nullptr)
-//		old_IPs.push_back(current_ip);
-//	current_ip = frame_data;
 
 	cout << "now my ip is: ";
 	ip_ntop(frame_data->data.IP);
 	cout << " for time " << frame_data->data.time << endl;
-	nazri(frame, iface_number);
-//	int count = getCountOfInterfaces();
-//	for (int i = 0; i < count; i++){
-//		if (i != iface_number){
-//			sendFrame(frame, i);
-//		}
-//	}
-
+	distribute(frame, iface_number);
 }
+
 void ClientMachine::r_dhcp_timeout(Frame frame)
 {
 	auto frame_data = (ethernet_frame *) frame.data;
 	frame_data->data.time = ntohl(frame_data->data.time);
 
-	if (memcmp(current_ip.IP, frame_data->data.IP, 4) == 0){    //TODO
+	if (memcmp(current_ip.IP, frame_data->data.IP, 4) == 0){
 		memset(current_ip.IP, 0, 4);
 		cout << "ip released" << endl;
 	}
-//	if (frame_data->data.IP == current_ip->data.IP){
-//		old_IPs.push_back(current_ip);
-//		current_ip = nullptr;
-//		cout << "ip released" << endl;
-//		return;
-//	}
 }
 void ClientMachine::release_ip(byte IP[4])
 {
@@ -339,7 +275,6 @@ void ClientMachine::t_dhcp_release(byte IP[4])
 		ethz->data.data_type = DHCP_RELEASE;
 		memcpy(ethz->data.MAC, iface[0].mac, 6);
 		memcpy(ethz->data.IP, IP, 4);
-//		ethz->data.IP = IP; //htonl(IP);
 		ethz->data.time = htonl(0);
 
 		Frame frame ((uint32) SIZE_OF_FRAME, data);
@@ -367,7 +302,6 @@ void ClientMachine::t_dhcp_extend_request(byte IP[4], int requested_time)
 		ethz->data.data_type = DHCP_REQUEST_EXTEND;
 		memcpy(ethz->data.MAC, iface[0].mac, 6);
 		memcpy(ethz->data.IP, IP, 4);
-//		ethz->data.IP = IP; //htonl(IP);
 		ethz->data.time = htonl((uint32)requested_time);
 
 		Frame frame ((uint32) SIZE_OF_FRAME, data);
@@ -391,12 +325,11 @@ void ClientMachine::r_dhcp_extend_response(Frame frame)
 		old_IPs.push_back(new_ptr);
 	}
 	memcpy(current_ip.IP, frame_data->data.IP, 4);
-//	current_ip = frame_data;
 	cout << "now my ip is ";
 	ip_ntop(frame_data->data.IP);
 	cout << " for time " << frame_data->data.time << endl;
 }
-void ClientMachine::nazri(Frame frame, int src_iface)
+void ClientMachine::distribute(Frame frame, int src_iface)
 {
 	int count = getCountOfInterfaces();
 	for (int i = 0; i < count; i++){
@@ -409,14 +342,13 @@ void ClientMachine::nazri(Frame frame, int src_iface)
 
 void ClientMachine::handle_ip_list()
 {
-//	old_IPs.push_back(current_ip);
-	std::sort(old_IPs.begin(), old_IPs.end(), [](const ethernet_data* f1, const ethernet_data* f2) {return f1->IP < f2->IP;});
+	std::sort(old_IPs.begin(), old_IPs.end(), []
+	(const ethernet_data* a, const ethernet_data* b) {
+		return (a->IP[0] < b->IP[0])?true:(a->IP[1] < b->IP[1]? true:(a->IP[2] < b->IP[2]? true:a->IP[3] < b->IP[3]));
+	});
 	auto count = (int) old_IPs.size();
 	for (int i = 0; i < count; i++) {
 		ip_ntop(old_IPs[i]->IP);
 		cout << endl;
 	}
-//	old_IPs.erase(find(old_IPs.begin(), old_IPs.end(), current_ip));
-//	ip_ntop(current_ip->data.IP);
-//	cout << endl;
 }

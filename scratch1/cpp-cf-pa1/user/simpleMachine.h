@@ -36,14 +36,14 @@
 #define SIZE_OF_FRAME sizeof(ethernet_frame)
 
 enum dhcp_command_type{
-	GET_IP_client,
-	ACCEPT_OFFER_client,
-	RELEASE_client,
-	EXTEND_LEASE_client,
-	PRINT_IP_client,
-	ADD_POOL_server,
-	ADD_TIME_server,
-	PRINT_POOL_server
+	GET_IP,
+	ACCEPT_OFFER,
+	RELEASE,
+	EXTEND_LEASE,
+	PRINT_IP,
+	ADD_POOL,
+	ADD_TIME,
+	PRINT_POOL
 };
 
 enum dhcp_data_type{
@@ -80,13 +80,6 @@ struct input_part {
 	int time;
 	byte IP[4];
 	uint8_t mask;
-	int MAC;
-};
-
-struct save_packet {
-	byte MAC[6];
-	byte IP[4];
-	int time;
 };
 
 class SimpleMachine{
@@ -112,7 +105,6 @@ public:
 	std::vector<std::string> split(std::string str, char delimiter);
 	void make_up_uint32(std::string IP, byte *temp);
 	void ip_ntop(byte IP[4]);
-	//bool factor_by_IP(const ethernet_frame *f1, const ethernet_frame *h2);
 	void print_HEX_byte(byte b);
 	void mac_ntop(byte MAC[6]);
 	int find_IP(std::vector<ethernet_data*> array, ethernet_frame* elem);

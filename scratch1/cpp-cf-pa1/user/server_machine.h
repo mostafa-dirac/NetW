@@ -48,8 +48,8 @@ public:
 	void add_time (int time);
 	void r_dhcp_discover (Frame frame, int iface_number);
 	void r_dhcp_request (Frame frame, int iface_number);
-	void r_dhcp_ack (Frame frame, int iface_number);
-	void r_dhcp_release (Frame frame, int iface_number);
+	void r_dhcp_ack (Frame frame);
+	void r_dhcp_release (Frame frame);
 	void r_dhcp_extend_request (Frame frame, int iface_number);
 	void t_dhcp_timeout (ethernet_data *announce);
 	int find_ip_pool (byte *target_ip);

@@ -42,7 +42,6 @@ ServerMachine::~ServerMachine () {
 }
 
 void ServerMachine::initialize () {
-	// TODO: Initialize your program here; interfaces are valid now.
 }
 
 /**
@@ -69,17 +68,6 @@ void ServerMachine::initialize () {
  * </code>
  */
 void ServerMachine::processFrame (Frame frame, int ifaceIndex) {
-	// TODO: process the raw frame; frame.data points to the frame's byte stream
-//	cerr << "Frame received at iface " << ifaceIndex <<
-//	     " with length " << frame.length << endl;
-//	struct ethernet_header {
-//		byte  dst[6];
-//		byte  src[6];
-//		uint16 type;
-//	} __attribute__ ((packed));
-//
-//	ethernet_header *eth = (ethernet_header *) frame.data;
-//	cerr << "Ethernet type field is 0x" << std::hex << ntohs (eth->type) << endl;
 	auto frame_packet = (ethernet_frame *) frame.data;
 
 	switch (frame_packet->data.data_type){
@@ -90,10 +78,10 @@ void ServerMachine::processFrame (Frame frame, int ifaceIndex) {
 			r_dhcp_request(frame, ifaceIndex);
 			break;
 		case DHCP_ACK:
-			r_dhcp_ack(frame, ifaceIndex);
+			r_dhcp_ack(frame);
 			break;
 		case DHCP_RELEASE:
-			r_dhcp_release(frame, ifaceIndex);
+			r_dhcp_release(frame);
 			break;
 		case DHCP_REQUEST_EXTEND:
 			r_dhcp_extend_request(frame, ifaceIndex);
@@ -109,43 +97,18 @@ void ServerMachine::processFrame (Frame frame, int ifaceIndex) {
  * Returning from this method will not finish the execution of the program.
  */
 void ServerMachine::run () {
-	// TODO: write your business logic here...
-//	struct ethernet_header {
-//		byte  dst[6];
-//		byte  src[6];
-//		uint16 type;
-//	} __attribute__ ((packed));
-//
-//	const int frameLength = sizeof (ethernet_header) + 100;
-//	byte *data = new byte[frameLength];
-//
-//	ethernet_header *eth = (ethernet_header *) data;
-//	memset (eth->dst, 255, 6); // broadcast address
-//	memcpy (eth->src, iface[0].mac, 6);
-//	eth->type = htons (0x0800);
-//
-//	iphdr *packet = (iphdr *) (data + sizeof (ethernet_header));
-//	packet->version = 4;
-//	packet->ihl = 5;
-//	packet->tot_len = htons (100);
-//
-//	Frame frame (frameLength, data);
-//	sendFrame (frame, 0); // sends frame on interface 0
-//
-//	delete[] data;
-//	cerr << "now ./free.sh and check the pcap log file to see the sent packet" << endl;
 	while (true){
 		auto *input = new input_part;
 		parse_admin_input(input);
 
 		switch (input->c_type){
-			case ADD_POOL_server:
+			case ADD_POOL:
 				add_pool(input->IP, input->mask);
 				break;
-			case ADD_TIME_server:
+			case ADD_TIME:
 				add_time(input->time);
 				break;
-			case PRINT_POOL_server:
+			case PRINT_POOL:
 				print_pool();
 				break;
 			default:
@@ -164,16 +127,16 @@ void ServerMachine::parse_admin_input(input_part *input_info)
 	regex add_time("add time .*");
 	regex print_pool("print pool");
 
-	if (std::regex_match(command, add_pool)){
-		input_info->c_type = ADD_POOL_server;
-		std::vector<std::string> temp = split(command_info[2], '/');
+	if (regex_match(command, add_pool)){
+		input_info->c_type = ADD_POOL;
+		vector<string> temp = split(command_info[2], '/');
 		make_up_uint32(temp[0], input_info->IP);
 		input_info->mask = (uint8_t)stoi(temp[1]);
-	} else if (std::regex_match(command, add_time)){
-		input_info->c_type = ADD_TIME_server;
+	} else if (regex_match(command, add_time)){
+		input_info->c_type = ADD_TIME;
 		input_info->time = stoi(command_info[2]);
-	} else if (std::regex_match(command, print_pool)){
-		input_info->c_type = PRINT_POOL_server;
+	} else if (regex_match(command, print_pool)){
+		input_info->c_type = PRINT_POOL;
 	}
 }
 void ServerMachine::print_pool()
@@ -269,7 +232,6 @@ void ServerMachine::r_dhcp_request(Frame frame, int iface_number)
 	auto itr = find_if(offered_IPs.begin(), offered_IPs.end(), [frame_data](const ethernet_data* a){
 		return (memcmp(a->IP, frame_data->data.IP, 4) == 0);
 	});
-	//TODO : SHAHKAR.
 	if (itr != offered_IPs.end()){
 		auto data = new byte[SIZE_OF_FRAME];
 		auto ethz = (ethernet_frame *) data;
@@ -289,12 +251,12 @@ void ServerMachine::r_dhcp_request(Frame frame, int iface_number)
 		mac_ntop(ethz->data.MAC);
 		cout << " for " << ethz->data.time << endl;
 
-		auto inst = new ethernet_data;  //TODO : SHAHKAR2
+		auto inst = new ethernet_data;
 		inst->time = ethz->data.time;
 		memcpy(inst->IP, ethz->data.IP, 4);
 		memcpy(inst->MAC, ethz->data.MAC, 6);
 		given_IPs.push_back(inst);
-		offered_IPs.erase(itr);         //TODO : SHAHKAR3
+		offered_IPs.erase(itr);
 
 		ethz->data.time = htonl(ethz->data.time);
 		Frame ack ((uint32) SIZE_OF_FRAME, data);
@@ -302,7 +264,7 @@ void ServerMachine::r_dhcp_request(Frame frame, int iface_number)
 		delete[] data;
 	}
 }
-void ServerMachine::r_dhcp_ack(Frame frame, int iface_number)
+void ServerMachine::r_dhcp_ack(Frame frame)
 {
 	auto frame_data = (ethernet_frame *) frame.data;
 	frame_data->data.time = ntohl(frame_data->data.time);
@@ -317,7 +279,7 @@ void ServerMachine::r_dhcp_ack(Frame frame, int iface_number)
 		offered_IPs.erase(itr);
 	}
 }
-void ServerMachine::r_dhcp_release(Frame frame, int iface_number)
+void ServerMachine::r_dhcp_release(Frame frame)
 {
 	auto frame_data = (ethernet_frame *) frame.data;
 	frame_data->data.time = ntohl(frame_data->data.time);
