@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="cpp_cf"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="cpp_cf">
+				<Option output="/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/cpp_cf" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/sthossein/NetW/scratch2/cpp-cf/base"/>
+					<Add directory="/home/sthossein/NetW/scratch2/cpp-cf/user"/>
+					<Add directory="/usr/include/c++/7"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/7"/>
+					<Add directory="/usr/include/c++/7/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 cpp_cf"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="cpp_cf/fast">
+				<Option output="/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/cpp_cf" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/sthossein/NetW/scratch2/cpp-cf/base"/>
+					<Add directory="/home/sthossein/NetW/scratch2/cpp-cf/user"/>
+					<Add directory="/usr/include/c++/7"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/7"/>
+					<Add directory="/usr/include/c++/7/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 cpp_cf/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/sthossein/NetW/scratch2/cpp-cf/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/base/cf.cpp">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/base/cf.h">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/base/frame.cpp">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/base/frame.h">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/base/interface.cpp">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/base/interface.h">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/base/machine.cpp">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/base/machine.h">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/base/main.cpp">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/base/partovdef.h">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/user/client_machine.cpp">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/user/client_machine.h">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/user/facade.cpp">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/user/nat_machine.cpp">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/user/nat_machine.h">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/user/server_machine.cpp">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/user/server_machine.h">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/user/simpleMachine.cpp">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/user/simpleMachine.h">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/user/sm.cpp">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/user/sm.h">
+			<Option target="cpp_cf"/>
+		</Unit>
+		<Unit filename="/home/sthossein/NetW/scratch2/cpp-cf/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
