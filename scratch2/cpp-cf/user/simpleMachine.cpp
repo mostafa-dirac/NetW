@@ -49,3 +49,16 @@ const std::string SimpleMachine::getCustomInformation () {
 bool SimpleMachine::sendFrame (Frame frame, int ifaceIndex){
 	return simulatedMachine->sendFrame(frame, ifaceIndex);
 }
+
+std::vector<std::string> SimpleMachine::split(std::string str, char delimiter)
+{
+	std::vector<std::string> internal;
+	std::stringstream ss(str); // Turn the string into a stream.
+	std::string tok;
+
+	while(getline(ss, tok, delimiter)) {
+		internal.push_back(tok);
+	}
+
+	return internal;
+}

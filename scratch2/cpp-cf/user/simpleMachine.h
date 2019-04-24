@@ -27,6 +27,59 @@
 
 #include "sm.h"
 #include "../base/frame.h"
+#include <vector>
+#include <sstream>
+
+struct ethernet_header {
+	byte  dst[6];
+	byte  src[6];
+	uint16 type;
+} __attribute__ ((packed));
+
+struct ip_header {
+	uint8_t version:4;
+	uint8_t IHL:4;
+	uint8_t DSCP:6;
+	uint8_t ECN:2;
+	uint16_t total_length;
+	uint16_t identification;
+	uint16_t flags_fragmentation_offset; //TODO: BIT Feild?
+	uint8_t TTL;
+	uint8_t protocol;
+	uint16_t header_checksum;
+	uint32_t src_ip;
+	uint32_t dst_ip;
+} __attribute__ ((packed));
+
+struct udp_header{
+	uint16_t src_port;
+	uint16_t dst_port;
+	uint16_t length;
+	uint16_t checksum;
+} __attribute__ ((packed));
+
+struct data_id{
+	uint8_t data_type:3;
+	uint8_t id:5;
+};
+
+struct header{
+	ethernet_header ethernetHeader;
+	ip_header ipHeader;
+	udp_header udpHeader;
+	data_id dataId;
+};
+
+struct data{
+	char data[50];
+};
+
+struct metadata{
+	uint32_t local_ip;
+	uint16_t local_port;
+	uint32_t public_ip;
+	uint16_t public_port;
+};
 
 class SimpleMachine{
 private:
@@ -48,6 +101,8 @@ public:
 	const std::string getCustomInformation ();
 
 	bool sendFrame (Frame frame, int ifaceIndex);
+
+	std::vector<std::string> split(std::string str, char delimiter);
 };
 
 #endif /* sm.h */

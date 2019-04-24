@@ -28,25 +28,7 @@
 #include "simpleMachine.h"
 #include "sm.h"
 
-struct ethernet_header {
-	byte  dst[6];
-	byte  src[6];
-	uint16 type;
-} __attribute__ ((packed));
 
-struct ip_header {
-	uint8_t version:4;
-	uint8_t IHL:4;
-	uint8_t DSCP:6;
-	uint8_t ECN:2;
-	uint16_t total_length;
-	uint16_t identification;
-	uint16_t flags_fragmentation_offset; //TODO: BIT Feild?
-	uint8_t TTL;
-	uint8_t protocol;
-	uint16_t header_checksum;
-
-};
 
 class ServerMachine: public SimpleMachine {
 public:
