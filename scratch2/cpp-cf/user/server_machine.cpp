@@ -76,7 +76,7 @@ void ServerMachine::processFrame (Frame frame, int ifaceIndex) {
 
 	auto ethz = (packet *) frame.data;
 
-	fix_received_header_endianness(&(ethz->hdr));
+	// fix_received_header_endianness(&(ethz->hdr)); TODO
 
 	if ((ethz->hdr.ipHeader.protocol == 17) && (get_checksum(&(ethz->hdr.ipHeader), 20) == 0)){
 		//std::cout << "SHABLAND_SERVER: valid packet" << std::endl;
@@ -145,7 +145,7 @@ void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
 	} __attribute__ ((packed));
 	auto ethz = (packet *)frame.data;
 
-	fix_received_data_not_msg_endianness(&(ethz->md));
+	//fix_received_data_not_msg_endianness(&(ethz->md)); TODO
 
 	if (find_client_from_local_ip(ethz->md.local_ip) != -1){
 		std::cout << "you already have an id, ignored" << std::endl;
@@ -193,7 +193,7 @@ void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
 
 		current_free_id++;
 
-		fix_sending_header_endianness(&(epfl->hdr));
+		//fix_sending_header_endianness(&(epfl->hdr)); TODO
 
 		Frame reply_frame ((uint32) packet_length, data);
 		sendFrame (reply_frame, which_interface);
@@ -244,8 +244,8 @@ void ServerMachine::receive_Request_getting_IP(Frame frame, int ifaceIndex) {
 	whole_packet->md.local_ip = information[ID_B]->addresses.local_ip;
 	whole_packet->md.local_port = information[ID_A]->addresses.local_port;
 
-	fix_sending_header_endianness(&(whole_packet->hdr));
-	fix_sending_data_not_msg_endianness(&(whole_packet->md));
+	//fix_sending_header_endianness(&(whole_packet->hdr)); TODO
+	//fix_sending_data_not_msg_endianness(&(whole_packet->md));
 
 	Frame frame_reply ((uint32) packet_length, data);
 	sendFrame (frame, ifaceIndex);
@@ -260,7 +260,7 @@ void ServerMachine::receive_Request_updating_info(Frame frame)
 	} __attribute__ ((packed));
 	auto whole_packet = (packet *)frame.data;
 
-	fix_received_data_not_msg_endianness(&(whole_packet->md));
+	//fix_received_data_not_msg_endianness(&(whole_packet->md)); TODO
 
 	int idx = find_client_from_ID(whole_packet->hdr.dataId.id);
 	if (idx != -1){
@@ -287,12 +287,11 @@ void ServerMachine::receive_status(Frame frame, int ifaceIndex) {
 	} __attribute__ ((packed));
 	auto ethz = (packet *)frame.data;
 
-	fix_received_data_not_msg_endianness(&(ethz->md));
+//	fix_received_data_not_msg_endianness(&(ethz->md)); TODO
 
 	byte flag = (byte)((ethz->md.local_ip == ethz->hdr.ipHeader.src_ip) && (ethz->md.local_port == ethz->hdr.udpHeader.src_port));
 
 	int data_length = get_data_length(STATUS_RESPONSE);
-//	int header_length = get_header_length();
 	int packet_length = SIZE_OF_HEADER + data_length;
 
 	byte *data = new byte[packet_length];
@@ -309,8 +308,8 @@ void ServerMachine::receive_status(Frame frame, int ifaceIndex) {
 	            1234, ethz->md.local_port,
 	            flag);
 
-	fix_sending_header_endianness(&(epfl->hdr));
-	fix_sending_data_not_msg_endianness(&(epfl->md));
+	//fix_sending_header_endianness(&(epfl->hdr)); TODO
+	//fix_sending_data_not_msg_endianness(&(epfl->md));
 
 	Frame frame_reply ((uint32) packet_length, data);
 	sendFrame (frame, ifaceIndex);

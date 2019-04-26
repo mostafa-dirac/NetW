@@ -87,7 +87,7 @@ void ClientMachine::processFrame (Frame frame, int ifaceIndex) {
 
 	auto ethz = (packet *) frame.data;
 
-	fix_received_header_endianness(&(ethz->hdr));
+	//fix_received_header_endianness(&(ethz->hdr)); TODO
 	if (ethz->hdr.ipHeader.TTL > 0){
 		//std::cout << "SHABLAND_CLIENT: no timeout" << std::endl;
 		if ((ethz->hdr.ipHeader.protocol == 17) && (get_checksum(&(ethz->hdr.ipHeader), 20) == 0)){
@@ -301,8 +301,8 @@ void ClientMachine::make_connection(uint16_t PORT) {
 
 	my_port = PORT;
 
-	fix_sending_header_endianness(&(whole_packet->hdr));
-	fix_sending_data_not_msg_endianness(&(whole_packet->msg));
+	//fix_sending_header_endianness(&(whole_packet->hdr)); TODO
+	//fix_sending_data_not_msg_endianness(&(whole_packet->msg));
 
 	Frame frame ((uint32) packet_length, data);
 	sendFrame (frame, 0);
@@ -359,7 +359,7 @@ void ClientMachine::get_id_info(byte ID) {
 	            my_port, 1234,
 	            ID);
 
-	fix_sending_header_endianness(ethz);
+	//fix_sending_header_endianness(ethz); TODO
 
 	// send frame on interface 0
 	Frame frame ((uint32) packet_length, data);
@@ -374,7 +374,7 @@ void ClientMachine::receive_Response_getting_IP_packet(Frame frame, int ifaceInd
 	} __attribute__ ((packed));
 	auto ethz = (packet *)frame.data;
 
-	fix_received_data_not_msg_endianness(&(ethz->msg));
+	// fix_received_data_not_msg_endianness(&(ethz->msg)); TODO
 
 	char *buf = new char[200];
 	byte *local_ip = new byte[4];
@@ -441,7 +441,7 @@ void ClientMachine::make_session(byte ID, data_type session_kind) {
 	char ping[4] = {'p','i','n','g'};
 	memcpy(ethz->pl.message, ping, 4);
 
-	fix_sending_header_endianness(&(ethz->hdr));
+	//fix_sending_header_endianness(&(ethz->hdr));
 
 	Frame frame ((uint32) packet_length, data);
 	sendFrame (frame, which_interface);
@@ -460,7 +460,7 @@ void ClientMachine::receive_Request_session_packet(Frame frame, int ifaceIndex,
 	} __attribute__ ((packed));
 
 	auto ethz = (packet *)frame.data;
-	fix_received_header_endianness(&(ethz->hdr));
+	//fix_received_header_endianness(&(ethz->hdr)); TODO
 
 	char ping[4] = {'p','i','n','g'};
 	char pong[4] = {'p','o','n','g'};
@@ -480,7 +480,7 @@ void ClientMachine::receive_Request_session_packet(Frame frame, int ifaceIndex,
 			            ethz->hdr.ipHeader.dst_ip, ethz->hdr.ipHeader.src_ip,
 			            ethz->hdr.udpHeader.dst_port, ethz->hdr.udpHeader.src_port,
 			            my_ID);
-			fix_sending_header_endianness(&(epfl->hdr));
+			//fix_sending_header_endianness(&(epfl->hdr)); TODO
 
 			memcpy(ethz->pl.message, pong, 4);
 
@@ -502,7 +502,7 @@ void ClientMachine::receive_Response_session_packet(Frame frame, int ifaceIndex,
 	} __attribute__ ((packed));
 
 	auto ethz = (packet *)frame.data;
-	fix_received_header_endianness(&(ethz->hdr));
+	// fix_received_header_endianness(&(ethz->hdr)); TODO
 
 	char pong[4] = {'p','o','n','g'};
 	// the message contains pong
@@ -558,7 +558,7 @@ void ClientMachine::send_message(byte ID, char *msg, int msg_length) {
 		            my_ID);
 		memcpy(ethz->pl.message, msg, static_cast<size_t>(msg_length));
 
-		fix_sending_header_endianness(&(ethz->hdr));
+		//fix_sending_header_endianness(&(ethz->hdr)); TODO
 
 		Frame frame ((uint32) packet_length, data);
 		sendFrame (frame, which_interface);
@@ -575,7 +575,7 @@ void ClientMachine::receive_Message_packet(Frame frame, int ifaceIndex) {
 	} __attribute__ ((packed));
 
 	auto ethz = (packet *)frame.data;
-	fix_received_header_endianness(&(ethz->hdr));
+	// fix_received_header_endianness(&(ethz->hdr)); TODO
 
 	if (check_connection(ethz->hdr.dataId.id)){
 		char *buf = new char[50];
@@ -613,8 +613,8 @@ void ClientMachine::receive_NAT_updated_packet() {
 	ethz->md.local_port = my_port;
 	ethz->md.local_ip = iface[0].getIp();
 
-	fix_sending_header_endianness(&(ethz->hdr));
-	fix_sending_data_not_msg_endianness(&(ethz->md));
+	//fix_sending_header_endianness(&(ethz->hdr));
+	//fix_sending_data_not_msg_endianness(&(ethz->md)); TODO
 
 	Frame frame ((uint32) packet_length, data);
 	sendFrame (frame, 0);
@@ -646,8 +646,8 @@ void ClientMachine::ask_status() {
 	ethz->md.local_ip = iface[0].getIp();
 	ethz->md.local_port = my_port;
 
-	fix_sending_header_endianness(&(ethz->hdr));
-	fix_sending_data_not_msg_endianness(&(ethz->md));
+	//fix_sending_header_endianness(&(ethz->hdr));
+	//fix_sending_data_not_msg_endianness(&(ethz->md)); TODO
 
 	Frame frame ((uint32) packet_length, data);
 	sendFrame(frame, 0);
@@ -662,7 +662,7 @@ void ClientMachine::receive_Status_Response_packet(Frame frame, int ifaceIndex) 
 
 	auto ethz = (packet *)frame.data;
 
-	fix_received_header_endianness(&(ethz->hdr));
+	// fix_received_header_endianness(&(ethz->hdr)); TODO
 
 	if (ethz->hdr.dataId.id == 0){
 		std::cout << "indirect" << std::endl;
