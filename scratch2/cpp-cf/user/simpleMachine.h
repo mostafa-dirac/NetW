@@ -29,6 +29,11 @@
 #include "../base/frame.h"
 #include <vector>
 #include <sstream>
+#include <regex>
+#include <netinet/in.h>
+#include <netinet/ip.h> // for iphdr struct
+
+#define SIZE_OF_HEADER sizeof(header)
 
 struct ethernet_header {
 	byte  dst[6];
@@ -61,24 +66,42 @@ struct udp_header{
 struct data_id{
 	uint8_t data_type:3;
 	uint8_t id:5;
-};
+} __attribute__ ((packed));
 
 struct header{
 	ethernet_header ethernetHeader;
 	ip_header ipHeader;
 	udp_header udpHeader;
 	data_id dataId;
-};
+} __attribute__ ((packed));
 
-struct data{
-	char data[50];
-};
+struct payload{
+	char message[50];
+} __attribute__ ((packed));
 
 struct metadata{
 	uint32_t local_ip;
 	uint16_t local_port;
 	uint32_t public_ip;
 	uint16_t public_port;
+} __attribute__ ((packed));
+
+enum data_type {
+	REQUEST_ASSIGNING_ID,
+	RESPONSE_ASSIGNING_ID,
+	DROP,
+	REQUEST_GETTING_IP,
+	RESPONSE_GETTING_IP,
+	REQUEST_LOCAL_SESSION,
+	RESPONSE_LOCAL_SESSION,
+	REQUEST_PUBLIC_SESSION,
+	RESPONSE_PUBLIC_SESSION,
+	MESSAGE,
+	NAT_UPDATED,
+	REQUEST_UPDATING_INFO,
+	STATUS,
+	STATUS_RESPONSE,
+	INVALID
 };
 
 class SimpleMachine{
@@ -103,6 +126,10 @@ public:
 	bool sendFrame (Frame frame, int ifaceIndex);
 
 	std::vector<std::string> split(std::string str, char delimiter);
+	static uint16_t get_checksum(const void *buf, size_t buf_len);      //TODO: really static?
+	static uint8_t get_data_type(data_type type);
+	static uint16_t get_data_length(data_type type);
+	int find_sending_interface(uint32 dst_ip_hdr);
 };
 
 #endif /* sm.h */

@@ -28,16 +28,25 @@
 #include "simpleMachine.h"
 #include "sm.h"
 
-
+struct client_info{
+	metadata addresses;
+	byte ID:5;
+};
 
 class ServerMachine: public SimpleMachine {
 public:
+	std::vector<client_info*> information;
+	byte current_free_id:5;
+
 	ServerMachine (SimulatedMachine*, Interface* iface);
 	virtual ~ServerMachine ();
 
 	virtual void initialize ();
 	virtual void run ();
 	virtual void processFrame (Frame frame, int ifaceIndex);
+	data_type detect_type(header *packet_header);
+	void receive_Request_assigning_ID(Frame frame, int ifaceIndex);
+	void receive_Request_getting_IP(Frame frame, int ifaceIndex);
 };
 
 #endif
