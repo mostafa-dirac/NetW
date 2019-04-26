@@ -90,7 +90,7 @@ void ServerMachine::processFrame (Frame frame, int ifaceIndex) {
 					receive_Request_getting_IP(frame, ifaceIndex);
 					break;
 				case REQUEST_UPDATING_INFO:
-					receive_Request_updating_info(frame, ifaceIndex);
+					receive_Request_updating_info(frame);
 					break;
 				case STATUS:
 					receive_status(frame, ifaceIndex);
@@ -145,7 +145,7 @@ void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
 	} __attribute__ ((packed));
 	auto ethz = (packet *)frame.data;
 
-	fix_received_data_not_msg_endianness(ethz->md);
+	fix_received_data_not_msg_endianness(&(ethz->md));
 
 	if (find_client_from_local_ip(ethz->md.local_ip) != -1){
 		std::cout << "you already have an id, ignored" << std::endl;
@@ -245,21 +245,22 @@ void ServerMachine::receive_Request_getting_IP(Frame frame, int ifaceIndex) {
 	whole_packet->md.local_port = information[ID_A]->addresses.local_port;
 
 	fix_sending_header_endianness(&(whole_packet->hdr));
-	fix_sending_data_not_msg_endianness(whole_packet->md);
+	fix_sending_data_not_msg_endianness(&(whole_packet->md));
 
 	Frame frame_reply ((uint32) packet_length, data);
 	sendFrame (frame, ifaceIndex);
 	delete[] data;
 }
 
-void ServerMachine::receive_Request_updating_info(Frame frame, int ifaceIndex) {
+void ServerMachine::receive_Request_updating_info(Frame frame)
+{
 	struct packet {
 		header hdr;
 		metadata md;
 	} __attribute__ ((packed));
 	auto whole_packet = (packet *)frame.data;
 
-	fix_received_data_not_msg_endianness(whole_packet->md);
+	fix_received_data_not_msg_endianness(&(whole_packet->md));
 
 	int idx = find_client_from_ID(whole_packet->hdr.dataId.id);
 	if (idx != -1){
@@ -286,7 +287,7 @@ void ServerMachine::receive_status(Frame frame, int ifaceIndex) {
 	} __attribute__ ((packed));
 	auto ethz = (packet *)frame.data;
 
-	fix_received_data_not_msg_endianness(ethz->md);
+	fix_received_data_not_msg_endianness(&(ethz->md));
 
 	byte flag = (byte)((ethz->md.local_ip == ethz->hdr.ipHeader.src_ip) && (ethz->md.local_port == ethz->hdr.udpHeader.src_port));
 
@@ -309,7 +310,7 @@ void ServerMachine::receive_status(Frame frame, int ifaceIndex) {
 	            flag);
 
 	fix_sending_header_endianness(&(epfl->hdr));
-	fix_sending_data_not_msg_endianness(epfl->md);
+	fix_sending_data_not_msg_endianness(&(epfl->md));
 
 	Frame frame_reply ((uint32) packet_length, data);
 	sendFrame (frame, ifaceIndex);
@@ -346,4 +347,16 @@ int ServerMachine::find_client_from_local_ip(uint32 local_ip) {
 		}
 	}
 	return -1;
+}
+
+int ServerMachine::find_sending_interface(uint32 dst_ip_hdr) {
+	int count = getCountOfInterfaces();
+	for (int i = 0; i < count; ++i) {
+		uint32 left = this->iface[i].getIp() & this->iface[i].getMask();
+		uint32 right = dst_ip_hdr & this->iface[i].getMask();
+		if (left == right){
+			return i;
+		}
+	}
+	return 0;
 }

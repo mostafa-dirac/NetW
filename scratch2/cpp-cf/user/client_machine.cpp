@@ -302,7 +302,7 @@ void ClientMachine::make_connection(uint16_t PORT) {
 	my_port = PORT;
 
 	fix_sending_header_endianness(&(whole_packet->hdr));
-	fix_sending_data_not_msg_endianness(whole_packet->msg);
+	fix_sending_data_not_msg_endianness(&(whole_packet->msg));
 
 	Frame frame ((uint32) packet_length, data);
 	sendFrame (frame, 0);
@@ -374,7 +374,7 @@ void ClientMachine::receive_Response_getting_IP_packet(Frame frame, int ifaceInd
 	} __attribute__ ((packed));
 	auto ethz = (packet *)frame.data;
 
-	fix_received_data_not_msg_endianness(ethz->msg);
+	fix_received_data_not_msg_endianness(&(ethz->msg));
 
 	char *buf = new char[200];
 	byte *local_ip = new byte[4];
@@ -614,7 +614,7 @@ void ClientMachine::receive_NAT_updated_packet() {
 	ethz->md.local_ip = iface[0].getIp();
 
 	fix_sending_header_endianness(&(ethz->hdr));
-	fix_sending_data_not_msg_endianness(ethz->md);
+	fix_sending_data_not_msg_endianness(&(ethz->md));
 
 	Frame frame ((uint32) packet_length, data);
 	sendFrame (frame, 0);
@@ -647,7 +647,7 @@ void ClientMachine::ask_status() {
 	ethz->md.local_port = my_port;
 
 	fix_sending_header_endianness(&(ethz->hdr));
-	fix_sending_data_not_msg_endianness(ethz->md);
+	fix_sending_data_not_msg_endianness(&(ethz->md));
 
 	Frame frame ((uint32) packet_length, data);
 	sendFrame(frame, 0);
@@ -669,4 +669,16 @@ void ClientMachine::receive_Status_Response_packet(Frame frame, int ifaceIndex) 
 	} else if (ethz->hdr.dataId.id == 1){
 		std::cout << "direct" << std::endl;
 	}
+}
+
+int ClientMachine::find_sending_interface(uint32 dst_ip_hdr) {
+	int count = getCountOfInterfaces();
+	for (int i = 0; i < count; ++i) {
+		uint32 left = this->iface[i].getIp() & this->iface[i].getMask();
+		uint32 right = dst_ip_hdr & this->iface[i].getMask();
+		if (left == right){
+			return i;
+		}
+	}
+	return 0;
 }

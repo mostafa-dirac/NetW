@@ -76,6 +76,7 @@ public:
 	void receive_NAT_updated_packet();
 	void ask_status();
 	void receive_Status_Response_packet(Frame frame, int ifaceIndex);
+	int find_sending_interface(uint32 dst_ip_hdr);
 };
 
 #endif

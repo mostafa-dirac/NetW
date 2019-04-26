@@ -155,18 +155,6 @@ uint16_t SimpleMachine::get_data_length(data_type type)
 	}
 }
 
-int SimpleMachine::find_sending_interface(uint32 dst_ip_hdr) {
-	int count = getCountOfInterfaces();
-	for (int i = 0; i < count; ++i) {
-		uint32 left = iface[i].getIp() & iface[i].getMask();
-		uint32 right = dst_ip_hdr & iface[i].getMask();
-		if (left == right){
-			return i;
-		}
-	}
-	return 0;
-}
-
 void SimpleMachine::fill_header(header *packet_header,
                  byte *mac,
                  data_type type, int data_length,
@@ -237,11 +225,11 @@ void SimpleMachine::fix_received_header_endianness(header *packet_header){
 	packet_header->udpHeader.length = ntohs(packet_header->udpHeader.length);
 }
 
-void SimpleMachine::fix_received_data_not_msg_endianness(metadata metaData){
-	metaData.local_port = ntohs(metaData.local_port);
-	metaData.local_ip = ntohs(metaData.local_ip);
-	metaData.public_port = ntohs(metaData.public_port);
-	metaData.public_ip = ntohs(metaData.public_ip);
+void SimpleMachine::fix_received_data_not_msg_endianness(metadata *metaData){
+	metaData->local_port = ntohs(metaData->local_port);
+	metaData->local_ip = ntohs(metaData->local_ip);
+	metaData->public_port = ntohs(metaData->public_port);
+	metaData->public_ip = ntohs(metaData->public_ip);
 }
 
 void SimpleMachine::fix_sending_header_endianness(header *packet_header){
@@ -260,9 +248,9 @@ void SimpleMachine::fix_sending_header_endianness(header *packet_header){
 	packet_header->udpHeader.length = htons(packet_header->udpHeader.length);
 }
 
-void SimpleMachine::fix_sending_data_not_msg_endianness(metadata metaData){
-	metaData.public_ip = htons(metaData.public_ip);
-	metaData.public_port = htons(metaData.public_port);
-	metaData.local_ip = htons(metaData.local_ip);
-	metaData.local_port = htons(metaData.local_port);
+void SimpleMachine::fix_sending_data_not_msg_endianness(metadata *metaData){
+	metaData->public_ip = htons(metaData->public_ip);
+	metaData->public_port = htons(metaData->public_port);
+	metaData->local_ip = htons(metaData->local_ip);
+	metaData->local_port = htons(metaData->local_port);
 }
