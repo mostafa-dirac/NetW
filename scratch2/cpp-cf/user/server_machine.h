@@ -47,6 +47,11 @@ public:
 	data_type detect_type(header *packet_header);
 	void receive_Request_assigning_ID(Frame frame, int ifaceIndex);
 	void receive_Request_getting_IP(Frame frame, int ifaceIndex);
+	void receive_Request_updating_info(Frame frame, int ifaceIndex);
+	void receive_status(Frame frame, int ifaceIndex);
+	int find_client_from_public_ip(uint32 public_ip);
+	int find_client_from_ID(byte ID);
+	int find_client_from_local_ip(uint32 local_ip);
 };
 
 #endif

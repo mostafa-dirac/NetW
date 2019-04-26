@@ -61,7 +61,7 @@ public:
 	virtual void run ();
 	virtual void processFrame (Frame frame, int ifaceIndex);
 	void parse_input(client_input *input_info);
-	data_type detect_data_type(header *packet_header, char *dm);
+	static data_type detect_data_type(header *packet_header, char *dm);
 	void make_connection(uint16_t PORT);
 	void receive_drop_packet(Frame frame, int ifaceIndex);
 	void make_session(byte ID, data_type session_kind);

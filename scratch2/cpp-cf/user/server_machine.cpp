@@ -252,3 +252,98 @@ void ServerMachine::receive_Request_getting_IP(Frame frame, int ifaceIndex) {
 	delete[] data;
 }
 
+void ServerMachine::receive_Request_updating_info(Frame frame, int ifaceIndex) {
+	struct packet {
+		header hdr;
+		metadata md;
+	} __attribute__ ((packed));
+	auto whole_packet = (packet *)frame.data;
+
+	fix_received_data_not_msg_endianness(whole_packet->md);
+
+	int idx = find_client_from_ID(whole_packet->hdr.dataId.id);
+	if (idx != -1){
+		information[idx]->addresses.local_ip = whole_packet->md.local_ip;
+		information[idx]->addresses.local_port = whole_packet->md.local_port;
+		byte *temp_ip = new byte;
+		memcpy(temp_ip, &(information[idx]->addresses.local_ip), 4);
+
+		char *buf = new char[100];
+		sprintf(buf, "id %d infos updated to %d.%d.%d.%d:%d",
+		        information[idx]->ID,
+		        temp_ip[3], temp_ip[2], temp_ip[1], temp_ip[0],
+		        information[idx]->addresses.local_port);
+		auto output = string(buf);
+		cout << output << endl;
+		delete[] buf;
+	}
+}
+
+void ServerMachine::receive_status(Frame frame, int ifaceIndex) {
+	struct packet {
+		header hdr;
+		metadata md;
+	} __attribute__ ((packed));
+	auto ethz = (packet *)frame.data;
+
+	fix_received_data_not_msg_endianness(ethz->md);
+
+	byte flag = (byte)((ethz->md.local_ip == ethz->hdr.ipHeader.src_ip) && (ethz->md.local_port == ethz->hdr.udpHeader.src_port));
+
+	int data_length = get_data_length(STATUS_RESPONSE);
+//	int header_length = get_header_length();
+	int packet_length = SIZE_OF_HEADER + data_length;
+
+	byte *data = new byte[packet_length];
+	auto epfl = (packet *)data;
+	epfl->md.local_ip = 0;
+	epfl->md.local_port = 0;
+
+	uint32 server_ip;
+	memset(&server_ip, 1, 4);
+	fill_header(&(epfl->hdr),
+	            iface[ifaceIndex].mac,
+	            STATUS_RESPONSE, data_length,
+	            server_ip, ethz->md.local_ip,
+	            1234, ethz->md.local_port,
+	            flag);
+
+	fix_sending_header_endianness(&(epfl->hdr));
+	fix_sending_data_not_msg_endianness(epfl->md);
+
+	Frame frame_reply ((uint32) packet_length, data);
+	sendFrame (frame, ifaceIndex);
+	delete[] data;
+}
+
+int ServerMachine::find_client_from_public_ip(uint32 public_ip) {
+	for (int i = 0; i < information.size(); ++i) {
+		if (information[i]->addresses.public_ip == public_ip){
+			return i;
+		}
+	}
+//	for (auto & itr : information){
+//		if(itr->addresses.public_ip == public_ip){      //TODO: return what?
+//			std::distance(information.begin(), itr);
+//		}
+//	}
+	return -1;
+}
+
+int ServerMachine::find_client_from_ID(byte ID) {
+	for (int i = 0; i < information.size(); ++i) {
+		if (information[i]->ID == ID){
+			return i;
+		}
+	}
+	return -1;
+}
+
+int ServerMachine::find_client_from_local_ip(uint32 local_ip) {
+	for (int i = 0; i < information.size(); ++i) {
+		if (information[i]->addresses.local_ip == local_ip){
+			return i;
+		}
+	}
+	return -1;
+}

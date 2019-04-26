@@ -622,7 +622,7 @@ void ClientMachine::receive_NAT_updated_packet() {
 }
 
 void ClientMachine::ask_status() {
-	int data_length = get_data_length(Status);
+	int data_length = get_data_length(STATUS);
 //	int header_length = get_header_length();
 	const int packet_length = SIZE_OF_HEADER + data_length;
 
@@ -637,7 +637,7 @@ void ClientMachine::ask_status() {
 
 	uint32_t dest_ip;
 	memset(&dest_ip, 1, 4);
-	fill_header(&(ethz->h),
+	fill_header(&(ethz->hdr),
 	            iface[0].mac,
 	            STATUS, data_length,
 	            iface[0].getIp(), dest_ip,

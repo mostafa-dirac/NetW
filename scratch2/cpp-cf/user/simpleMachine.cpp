@@ -166,3 +166,103 @@ int SimpleMachine::find_sending_interface(uint32 dst_ip_hdr) {
 	}
 	return 0;
 }
+
+void SimpleMachine::fill_header(header *packet_header,
+                 byte *mac,
+                 data_type type, int data_length,
+                 uint32 src_ip, uint32 dst_ip,
+                 uint16_t src_port, uint16_t dst_port,
+                 uint8_t ID){
+
+	fill_ethernet(&(packet_header->ethernetHeader),
+	              mac);
+	fill_ip_header(&(packet_header->ipHeader),
+	               data_length, src_ip, dst_ip);
+	fill_udp_header(&(packet_header->udpHeader),
+	                data_length, src_port, dst_port);
+	fill_data_type_id(&(packet_header->dataId),
+	                  type, ID);
+}
+
+void SimpleMachine::fill_ethernet(ethernet_header *packet_header,
+                   byte *MAC){
+	packet_header->type = htons (0x0800);
+	memset(packet_header->dst, 255, 6);
+	memcpy(packet_header->src, MAC, 6);
+}
+
+void SimpleMachine::fill_ip_header(ip_header *packet_ip_header, int data_length, uint32 src_ip, uint32 dst_ip){
+	packet_ip_header->version = 4;
+	packet_ip_header->IHL = 5;
+	packet_ip_header->DSCP = 0;
+	packet_ip_header->ECN = 0;
+	packet_ip_header->total_length = sizeof(ip_header) + sizeof(udp_header) + sizeof(data_id) + data_length;
+	packet_ip_header->identification = 0;
+	packet_ip_header->flags_fragmentation_offset = 0;
+	packet_ip_header->TTL = 64;
+	packet_ip_header->protocol = 17;
+	packet_ip_header->header_checksum = 0;
+	packet_ip_header->src_ip = src_ip;
+	packet_ip_header->dst_ip = dst_ip;
+	packet_ip_header->header_checksum = get_checksum(packet_ip_header, 20);
+}
+
+void SimpleMachine::fill_udp_header(udp_header *udpHeader,
+                     int data_length, uint16_t src_port, uint16_t dst_port){
+	udpHeader->src_port = src_port;
+	udpHeader->dst_port = dst_port;
+	udpHeader->length = sizeof(udp_header) + sizeof(data_id) + data_length;
+	udpHeader->checksum = 0;
+}
+
+void SimpleMachine::fill_data_type_id(data_id *dataId,
+                       data_type type, uint8_t ID){
+	dataId->data_type = get_data_type(type);
+	dataId->id = ID;
+}
+
+void SimpleMachine::fix_received_header_endianness(header *packet_header){
+	packet_header->ethernetHeader.type = ntohs(packet_header->ethernetHeader.type);
+
+	packet_header->ipHeader.src_ip = ntohl(packet_header->ipHeader.src_ip);
+	packet_header->ipHeader.dst_ip = ntohl(packet_header->ipHeader.dst_ip);
+	packet_header->ipHeader.header_checksum = ntohs(packet_header->ipHeader.header_checksum);
+	packet_header->ipHeader.total_length = ntohs(packet_header->ipHeader.total_length);
+	packet_header->ipHeader.flags_fragmentation_offset = ntohs(packet_header->ipHeader.flags_fragmentation_offset);
+	packet_header->ipHeader.identification = ntohs(packet_header->ipHeader.identification);
+
+	packet_header->udpHeader.checksum = ntohs(packet_header->udpHeader.checksum);
+	packet_header->udpHeader.src_port = ntohs(packet_header->udpHeader.src_port);
+	packet_header->udpHeader.dst_port = ntohs(packet_header->udpHeader.dst_port);
+	packet_header->udpHeader.length = ntohs(packet_header->udpHeader.length);
+}
+
+void SimpleMachine::fix_received_data_not_msg_endianness(metadata metaData){
+	metaData.local_port = ntohs(metaData.local_port);
+	metaData.local_ip = ntohs(metaData.local_ip);
+	metaData.public_port = ntohs(metaData.public_port);
+	metaData.public_ip = ntohs(metaData.public_ip);
+}
+
+void SimpleMachine::fix_sending_header_endianness(header *packet_header){
+	packet_header->ethernetHeader.type = htons(packet_header->ethernetHeader.type);
+
+	packet_header->ipHeader.src_ip = htonl(packet_header->ipHeader.src_ip);
+	packet_header->ipHeader.dst_ip = htonl(packet_header->ipHeader.dst_ip);
+	packet_header->ipHeader.header_checksum = htons(packet_header->ipHeader.header_checksum);
+	packet_header->ipHeader.total_length = htons(packet_header->ipHeader.total_length);
+	packet_header->ipHeader.flags_fragmentation_offset = htons(packet_header->ipHeader.flags_fragmentation_offset);
+	packet_header->ipHeader.identification = htons(packet_header->ipHeader.identification);
+
+	packet_header->udpHeader.checksum = htons(packet_header->udpHeader.checksum);
+	packet_header->udpHeader.src_port = htons(packet_header->udpHeader.src_port);
+	packet_header->udpHeader.dst_port = htons(packet_header->udpHeader.dst_port);
+	packet_header->udpHeader.length = htons(packet_header->udpHeader.length);
+}
+
+void SimpleMachine::fix_sending_data_not_msg_endianness(metadata metaData){
+	metaData.public_ip = htons(metaData.public_ip);
+	metaData.public_port = htons(metaData.public_port);
+	metaData.local_ip = htons(metaData.local_ip);
+	metaData.local_port = htons(metaData.local_port);
+}
