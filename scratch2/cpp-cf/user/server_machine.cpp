@@ -79,9 +79,7 @@ void ServerMachine::processFrame (Frame frame, int ifaceIndex) {
 	// fix_received_header_endianness(&(ethz->hdr)); TODO
 
 	if ((ethz->hdr.ipHeader.protocol == 17) && (get_checksum(&(ethz->hdr.ipHeader), 20) == 0)){
-		//std::cout << "SHABLAND_SERVER: valid packet" << std::endl;
-		if (ethz->hdr.ipHeader.dst_ip == iface[0].getIp()){
-			//std::cout << "SHABLAND_SERVER: packet is mine" << std::endl;
+		if (ethz->hdr.ipHeader.dst_ip == htonl(iface[1].getIp())){
 			switch (detect_type(&(ethz->hdr))){
 				case REQUEST_ASSIGNING_ID:
 					receive_Request_assigning_ID(frame, ifaceIndex);
@@ -151,7 +149,8 @@ void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
 		std::cout << "you already have an id, ignored" << std::endl;
 		return;
 	}
-
+	if (current_free_id == 0)
+		current_free_id++;
 	if (current_free_id <= 31){
 		int data_length = get_data_length(RESPONSE_ASSIGNING_ID);
 		int packet_length = SIZE_OF_HEADER + data_length;
@@ -181,12 +180,12 @@ void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
 		information.push_back(ci);
 
 		byte *temp_ip = new byte;
-		memcpy(temp_ip, &(ci->addresses.local_ip), 4);
-		char *buf = new char[100];
+		memcpy(temp_ip, &(ci->addresses.public_ip), 4);      //TODO: public is correct.
+		auto buf = new char[100];
 		sprintf(buf, "new id %d assigned to %d.%d.%d.%d:%d",
 		        current_free_id,
-		        temp_ip[3], temp_ip[2], temp_ip[1], temp_ip[0],
-		        ci->addresses.local_port);
+		        temp_ip[0], temp_ip[1], temp_ip[2], temp_ip[3],
+		        ntohs(ci->addresses.public_port));
 		auto output = string(buf);
 		cout << output << endl;
 		delete[] buf;
@@ -248,7 +247,7 @@ void ServerMachine::receive_Request_getting_IP(Frame frame, int ifaceIndex) {
 	//fix_sending_data_not_msg_endianness(&(whole_packet->md));
 
 	Frame frame_reply ((uint32) packet_length, data);
-	sendFrame (frame, ifaceIndex);
+	sendFrame (frame_reply, ifaceIndex);
 	delete[] data;
 }
 
@@ -312,7 +311,7 @@ void ServerMachine::receive_status(Frame frame, int ifaceIndex) {
 	//fix_sending_data_not_msg_endianness(&(epfl->md));
 
 	Frame frame_reply ((uint32) packet_length, data);
-	sendFrame (frame, ifaceIndex);
+	sendFrame (frame_reply, ifaceIndex);
 	delete[] data;
 }
 

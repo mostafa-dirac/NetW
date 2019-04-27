@@ -42,10 +42,8 @@ struct ethernet_header {
 } __attribute__ ((packed));
 
 struct ip_header {
-	uint8_t version:4;
-	uint8_t IHL:4;
-	uint8_t DSCP:6;
-	uint8_t ECN:2;
+	uint8_t version_IHL;
+	uint8_t DSCP_ECN;
 	uint16_t total_length;
 	uint16_t identification;
 	uint16_t flags_fragmentation_offset; //TODO: BIT Feild?

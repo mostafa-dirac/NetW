@@ -64,26 +64,34 @@ std::vector<std::string> SimpleMachine::split(std::string str, char delimiter)
 }
 
 uint16_t SimpleMachine::get_checksum(const void *buf, size_t buf_len){
-	uint32_t sum = 0;
-	uint32_t carry = 0;
-	uint16_t result = 0;
+	// Cast the data pointer to one that can be indexed.
+	char* data=(char*)buf;
 
-	auto ip_temp = (const uint16_t *)(buf);
+	// Initialise the accumulator.
+	uint32_t acc=0xffff;
 
-	while (buf_len > 1){
-		sum += *ip_temp;
-		ip_temp++;
-		buf_len-=2;
+	// Handle complete 16-bit blocks.
+	for (size_t i=0;i+1<buf_len;i+=2) {
+		uint16_t word;
+		memcpy(&word,data+i,2);
+		acc+=ntohs(word);
+		if (acc>0xffff) {
+			acc-=0xffff;
+		}
 	}
 
-	while (sum > 0x0FFFF) {
-		carry = (unsigned)(sum & (unsigned)0x0F0000) / 65536;
-		sum = (uint32_t)(sum & (unsigned)0xFFFF) + carry;
+	// Handle any partial block at the end of the data.
+	if (buf_len&1) {
+		uint16_t word=0;
+		memcpy(&word,data+buf_len-1,1);
+		acc+=ntohs(word);
+		if (acc>0xffff) {
+			acc-=0xffff;
+		}
 	}
 
-	sum = (unsigned)0x0FFFF - sum;
-	result = (uint16_t) sum;
-	return result;
+	// Return the checksum in network byte order.
+	return htons(~acc);
 }
 
 uint8_t SimpleMachine::get_data_type(data_type type)
@@ -180,26 +188,27 @@ void SimpleMachine::fill_ethernet(ethernet_header *packet_header,
 }
 
 void SimpleMachine::fill_ip_header(ip_header *packet_ip_header, int data_length, uint32 src_ip, uint32 dst_ip){
-	packet_ip_header->version = 4;
-	packet_ip_header->IHL = 5;
-	packet_ip_header->DSCP = 0;
-	packet_ip_header->ECN = 0;
-	packet_ip_header->total_length = sizeof(ip_header) + sizeof(udp_header) + sizeof(data_id) + data_length;
+	packet_ip_header->version_IHL = 0x45;
+	packet_ip_header->DSCP_ECN = 0;
+	packet_ip_header->total_length = htons(sizeof(ip_header) + sizeof(udp_header) + sizeof(data_id) + data_length);
 	packet_ip_header->identification = 0;
 	packet_ip_header->flags_fragmentation_offset = 0;
 	packet_ip_header->TTL = 64;
 	packet_ip_header->protocol = 17;
-	packet_ip_header->header_checksum = 0;
-	packet_ip_header->src_ip = src_ip;
-	packet_ip_header->dst_ip = dst_ip;
-	packet_ip_header->header_checksum = get_checksum(packet_ip_header, 20);
+	packet_ip_header->header_checksum = 0x0;
+	packet_ip_header->src_ip = htonl(src_ip);
+	packet_ip_header->dst_ip = htonl(dst_ip);
+	packet_ip_header->header_checksum = (get_checksum(packet_ip_header, 20));
+//	packet_ip_header->src_ip = htonl(src_ip);
+//	packet_ip_header->dst_ip = htonl(dst_ip);
+//	packet_ip_header->total_length = htons(sizeof(ip_header) + sizeof(udp_header) + sizeof(data_id) + data_length);
 }
 
 void SimpleMachine::fill_udp_header(udp_header *udpHeader,
                      int data_length, uint16_t src_port, uint16_t dst_port){
-	udpHeader->src_port = src_port;
-	udpHeader->dst_port = dst_port;
-	udpHeader->length = sizeof(udp_header) + sizeof(data_id) + data_length;
+	udpHeader->src_port = htons(src_port);
+	udpHeader->dst_port = htons(dst_port);
+	udpHeader->length = htons(sizeof(udp_header) + sizeof(data_id) + data_length);
 	udpHeader->checksum = 0;
 }
 
