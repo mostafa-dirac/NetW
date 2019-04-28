@@ -76,7 +76,7 @@ public:
 	bool valid_in_range(uint16_t port);
 	int find_in_local_table(uint32_t local_ip, uint16_t local_port);
 	int find_in_session(uint32_t local_ip, uint16_t local_port, uint32_t outer_ip, uint16_t outer_port);
-	void parse_input(nat_input *input_info);
+	static void parse_input(nat_input *input_info);
 	void block_range(uint16_t min, uint16_t max);
 	void reset_setting();
 	int find_in_outer_table(uint32_t public_ip, uint16_t public_port);

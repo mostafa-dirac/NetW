@@ -45,6 +45,9 @@ struct client_input {
 	int msg_length;
 };
 
+const char ping[4] = {'p','i','n','g'};
+const char pong[4] = {'p','o','n','g'};
+
 class ClientMachine: public SimpleMachine {
 public:
 	uint16_t my_port;
@@ -54,16 +57,13 @@ public:
 	bool connected;
 	data_type peer_session_kind;        //TODO: CHANGE.
 
-	static constexpr char ping[4] = {'p','i','n','g'};
-	static constexpr char pong[4] = {'p','o','n','g'};
-
 	ClientMachine (SimulatedMachine*, Interface* iface);
 	virtual ~ClientMachine ();
 
 	virtual void initialize ();
 	virtual void run ();
 	virtual void processFrame (Frame frame, int ifaceIndex);
-	void parse_input(client_input *input_info);
+	static void parse_input(client_input *input_info);
 	static data_type detect_data_type(header *packet_header, char *dm);
 	void make_connection(uint16_t PORT);
 	void receive_drop_packet(Frame frame);

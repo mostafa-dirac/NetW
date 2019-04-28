@@ -44,7 +44,7 @@ public:
 	virtual void initialize ();
 	virtual void run ();
 	virtual void processFrame (Frame frame, int ifaceIndex);
-	data_type detect_type(header *packet_header);
+	static data_type detect_type(header *packet_header);
 	void receive_Request_assigning_ID(Frame frame, int ifaceIndex);
 	void receive_Request_getting_IP(Frame frame, int ifaceIndex);
 	void receive_Request_updating_info(Frame frame);

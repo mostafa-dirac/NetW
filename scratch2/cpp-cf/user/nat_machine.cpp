@@ -206,10 +206,10 @@ address NatMachine::calculate_new_address(){
 	counter++;
 	struct address new_address = {new_ip, new_port};
 	return new_address;
-};
+}
 
 bool NatMachine::valid_in_range(uint16_t port){
-	for (auto & itr : blocked_range){ // blocked_range.begin() ; itr < blocked_range.end() ; itr++
+	for (auto & itr : blocked_range){
 		if (port <= itr->end && port >= itr->begin){
 			return false;
 		}
@@ -253,9 +253,11 @@ void NatMachine::block_range(uint16_t min, uint16_t max){
 }
 
 void NatMachine::reset_setting(){
-	for (int i = 0; i < sessions.size() ; ++i) {
-
-	}
+	blocked_range.clear();
+	table.clear();
+	sessions.clear();
+	cout << "please enter the base start number for port." << endl;
+	cin >> base_port;
 }
 
 int NatMachine::find_sending_interface(uint32 dst_ip_hdr) {

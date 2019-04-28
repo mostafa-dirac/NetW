@@ -144,15 +144,12 @@ public:
 	static uint16_t get_checksum(const void *buf, size_t buf_len);      //TODO: really static?
 	static uint8_t get_data_type(data_type type);
 	static uint16_t get_data_length(data_type type);
-	static void fill_header(header *packet_header, byte *mac, data_type type, int data_length,
-	                 uint32 src_ip, uint32 dst_ip,
-	                 uint16_t src_port, uint16_t dst_port,
-	                 uint8_t ID);
-	static void fill_ethernet(ethernet_header *packet_header, byte *MAC);
-	static void fill_ip_header(ip_header *packet_ip_header, int data_length, uint32 src_ip, uint32 dst_ip);
-	static void fill_udp_header(udp_header *udpHeader, int data_length, uint16_t src_port, uint16_t dst_port);
-	static void fill_data_type_id(data_id *dataId, data_type type, uint8_t ID);
-	void printFrame(Frame &frame);
+	static void fill_header(header *packet_header, byte *mac, data_type type, int data_length, uint32 src_ip, uint32 dst_ip,
+	                 uint16_t src_port, uint16_t dst_port, uint8_t ID);
+//	static void fill_ethernet(ethernet_header *packet_header, byte *MAC);
+//	static void fill_ip_header(ip_header *packet_ip_header, int data_length, uint32 src_ip, uint32 dst_ip);
+//	static void fill_udp_header(udp_header *udpHeader, int data_length, uint16_t src_port, uint16_t dst_port);
+//	static void fill_data_type_id(data_id *dataId, data_type type, uint8_t ID);
 };
 
 #endif /* sm.h */
