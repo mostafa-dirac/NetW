@@ -69,12 +69,7 @@ void ServerMachine::initialize () {
  * </code>
  */
 void ServerMachine::processFrame (Frame frame, int ifaceIndex) {
-	struct packet {
-		header hdr;
-		payload pl;
-	} __attribute__ ((packed));
-
-	auto ethz = (packet *) frame.data;
+	auto ethz = (packet_pl *) frame.data;
 
 	if ((ethz->hdr.ipHeader.protocol == 17) && (get_checksum(&(ethz->hdr.ipHeader), 20) == 0)){
 		if (ethz->hdr.ipHeader.dst_ip == 0x01010101){
@@ -135,14 +130,9 @@ data_type ServerMachine::detect_type(header *packet_header) {
 }
 
 void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
-	struct packet {
-		header hdr;
-		metadata md;
-	} __attribute__ ((packed));
-	auto ethz = (packet *)frame.data;
+	auto ethz = (packet_md *)frame.data;
 
 	if (find_client_from_local_ip(ntohs(ethz->md.local_ip)) != -1){
-//		std::cout << "you already have an id, ignored" << std::endl;
 		return;
 	}
 	if (current_free_id == 0)
@@ -152,7 +142,7 @@ void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
 		int packet_length = SIZE_OF_HEADER + data_length;
 
 		byte *data = new byte[packet_length];
-		auto epfl = (packet *)data;
+		auto epfl = (packet_md *)data;
 
 		uint32 server_ip = 0x01010101;
 		int which_interface = ifaceIndex;
@@ -215,11 +205,7 @@ void ServerMachine::receive_Request_getting_IP(Frame frame, int ifaceIndex) {
 	int packet_length = SIZE_OF_HEADER + data_length;
 
 	byte *data = new byte[packet_length];
-	struct packet {
-		header hdr;
-		metadata md;
-	} __attribute__ ((packed));
-	auto whole_packet = (packet *)data;
+	auto whole_packet = (packet_md *)data;
 
 	uint32 server_ip = 0x01010101;
 	fill_header(&(whole_packet->hdr),
@@ -241,11 +227,7 @@ void ServerMachine::receive_Request_getting_IP(Frame frame, int ifaceIndex) {
 
 void ServerMachine::receive_Request_updating_info(Frame frame)
 {
-	struct packet {
-		header hdr;
-		metadata md;
-	} __attribute__ ((packed));
-	auto whole_packet = (packet *)frame.data;
+	auto whole_packet = (packet_md *)frame.data;
 
 	int idx = find_client_from_ID(whole_packet->hdr.dataId.id);
 	if (idx != -1){
@@ -266,11 +248,7 @@ void ServerMachine::receive_Request_updating_info(Frame frame)
 }
 
 void ServerMachine::receive_status(Frame frame, int ifaceIndex) {
-	struct packet {
-		header hdr;
-		metadata md;
-	} __attribute__ ((packed));
-	auto ethz = (packet *)frame.data;
+	auto ethz = (packet_md *)frame.data;
 
 	byte flag = (byte)((ethz->md.local_ip == ethz->hdr.ipHeader.src_ip) && (ethz->md.local_port == ethz->hdr.udpHeader.src_port));
 
@@ -278,7 +256,7 @@ void ServerMachine::receive_status(Frame frame, int ifaceIndex) {
 	int packet_length = SIZE_OF_HEADER + data_length;
 
 	byte *data = new byte[packet_length];
-	auto epfl = (packet *)data;
+	auto epfl = (packet_md *)data;
 	epfl->md.local_ip = 0x00;
 	epfl->md.local_port = 0x0000;
 

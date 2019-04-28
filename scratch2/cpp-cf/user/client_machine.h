@@ -54,6 +54,9 @@ public:
 	bool connected;
 	data_type peer_session_kind;        //TODO: CHANGE.
 
+	static constexpr char ping[4] = {'p','i','n','g'};
+	static constexpr char pong[4] = {'p','o','n','g'};
+
 	ClientMachine (SimulatedMachine*, Interface* iface);
 	virtual ~ClientMachine ();
 
@@ -70,7 +73,7 @@ public:
 	void receive_Response_getting_IP_packet(Frame frame);
 	void receive_Request_session_packet(Frame frame, int ifaceIndex, data_type session_kind);
 	bool check_connection(byte ID);
-	void receive_Response_session_packet(Frame frame, data_type session_kind);
+	void receive_Response_session_packet(Frame frame);
 	void send_message(byte ID, char *msg, int msg_length);
 	void receive_Message_packet(Frame frame);
 	void receive_NAT_updated_packet();

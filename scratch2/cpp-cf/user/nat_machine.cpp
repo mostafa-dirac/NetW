@@ -70,16 +70,12 @@ void NatMachine::initialize () {
  * </code>
  */
 void NatMachine::processFrame (Frame frame, int ifaceIndex) {
-	struct packet {
-		header hdr;
-		payload pl;
-	} __attribute__ ((packed));
 	auto ethz = (header *) frame.data;
 	int client_idx, ifidx;
 	int data_length = get_data_length(DROP);
 	const int packet_length = SIZE_OF_HEADER + data_length;
 	byte *data = new byte[packet_length];
-	auto epfl = (packet *)data;
+	auto epfl = (packet_pl *)data;
 	char drop[4] = {'d','r','o','p'};
 
 	if (ifaceIndex == 0){

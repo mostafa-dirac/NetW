@@ -91,6 +91,16 @@ struct metadata{
 	uint16_t public_port;
 } __attribute__ ((packed));
 
+struct packet_pl {
+	header hdr;
+	payload pl;
+} __attribute__ ((packed));
+
+struct packet_md {
+	header hdr;
+	metadata md;
+} __attribute__ ((packed));
+
 enum data_type {
 	REQUEST_ASSIGNING_ID,
 	RESPONSE_ASSIGNING_ID,
