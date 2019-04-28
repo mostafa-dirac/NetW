@@ -142,10 +142,7 @@ public:
 	static void fill_ip_header(ip_header *packet_ip_header, int data_length, uint32 src_ip, uint32 dst_ip);
 	static void fill_udp_header(udp_header *udpHeader, int data_length, uint16_t src_port, uint16_t dst_port);
 	static void fill_data_type_id(data_id *dataId, data_type type, uint8_t ID);
-	static void fix_received_header_endianness(header *packet_header);
-	static void fix_received_data_not_msg_endianness(metadata *metaData);
-	static void fix_sending_header_endianness(header *packet_header);
-	static void fix_sending_data_not_msg_endianness(metadata *metaData);
+	void printFrame(Frame &frame);
 };
 
 #endif /* sm.h */

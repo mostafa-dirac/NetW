@@ -209,8 +209,9 @@ void ClientMachine::parse_input(client_input *input_info){
 		input_info->msg = new char;
 		vector<string> ID_msg = split(command_info[3], ':');
 		input_info->ID = static_cast<uint16>(stoi(ID_msg[0]));
-		unsigned long len = ID_msg[1].size();
-		ID_msg[1].copy(input_info->msg, len);
+		vector<string> name_resan = split(command, ':');
+		unsigned long len = name_resan[1].size();
+		name_resan[1].copy(input_info->msg, len);
 		input_info->msg_length = static_cast<int>(len);
 	} else if (regex_match(command, status)){
 		input_info->i_type = status_client;
@@ -353,9 +354,9 @@ void ClientMachine::receive_Response_getting_IP_packet(Frame frame)
 	sprintf(buf, "packet with (%d, %d.%d.%d.%d, %d, %d.%d.%d.%d, %d) received",
 	        ethz->hdr.dataId.id,
 	        local_ip[0], local_ip[1], local_ip[2], local_ip[3],
-	        ethz->msg.local_port,
+	        ntohs(ethz->msg.local_port),
 	        public_ip[0], public_ip[1], public_ip[2], public_ip[3],
-	        ethz->msg.public_port);
+	        ntohs(ethz->msg.public_port));
 	auto output = string(buf);
 	cout << output << endl;
 	delete[] buf;
@@ -448,7 +449,7 @@ void ClientMachine::receive_Request_session_packet(Frame frame, int ifaceIndex,
 			            ntohs(ethz->hdr.udpHeader.dst_port), ntohs(ethz->hdr.udpHeader.src_port),
 			            my_ID);
 
-			memcpy(ethz->pl.message, pong, 4);
+			memcpy(epfl->pl.message, pong, 4);
 
 			Frame new_frame ((uint32) packet_length, data);
 			sendFrame (new_frame, ifaceIndex);
@@ -474,7 +475,7 @@ void ClientMachine::receive_Response_session_packet(Frame frame, data_type sessi
 	if (memcmp(pong, ethz->pl.message, 4) == 0){
 		if (ethz->hdr.dataId.id == peer_ID){
 			if (!connected){
-				if (session_kind == peer_session_kind){
+			//	if (session_kind == peer_session_kind){
 					connected = true;
 					char *buf = new char[50];
 					sprintf(buf, "Connected to %d", peer_ID);
@@ -482,7 +483,7 @@ void ClientMachine::receive_Response_session_packet(Frame frame, data_type sessi
 					cout << output << endl;
 					delete[] buf;
 					return;
-				}
+			//	}
 			}
 		}
 	}
@@ -536,7 +537,7 @@ void ClientMachine::receive_Message_packet(Frame frame)
 
 	if (check_connection(ethz->hdr.dataId.id)){
 		char *buf = new char[50];
-		sprintf(buf, "received message from %d:", ethz->hdr.dataId.id);
+		sprintf(buf, "received msg from %d:", ethz->hdr.dataId.id);
 		auto output = string(buf);
 //		cout << output;
 		size_t len = ntohs(ethz->hdr.udpHeader.length) - sizeof(udp_header) - sizeof(data_id);

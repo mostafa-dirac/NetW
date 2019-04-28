@@ -23,6 +23,7 @@
  */
 
 
+#include <iomanip>
 #include "simpleMachine.h"
 
 SimpleMachine::SimpleMachine (const SimulatedMachine *simulatedMachine, Interface* iface){
@@ -199,9 +200,6 @@ void SimpleMachine::fill_ip_header(ip_header *packet_ip_header, int data_length,
 	packet_ip_header->src_ip = htonl(src_ip);
 	packet_ip_header->dst_ip = htonl(dst_ip);
 	packet_ip_header->header_checksum = (get_checksum(packet_ip_header, 20));
-//	packet_ip_header->src_ip = htonl(src_ip);
-//	packet_ip_header->dst_ip = htonl(dst_ip);
-//	packet_ip_header->total_length = htons(sizeof(ip_header) + sizeof(udp_header) + sizeof(data_id) + data_length);
 }
 
 void SimpleMachine::fill_udp_header(udp_header *udpHeader,
@@ -218,48 +216,11 @@ void SimpleMachine::fill_data_type_id(data_id *dataId,
 	dataId->id = ID;
 }
 
-void SimpleMachine::fix_received_header_endianness(header *packet_header){
-	packet_header->ethernetHeader.type = ntohs(packet_header->ethernetHeader.type);
-
-	packet_header->ipHeader.src_ip = ntohl(packet_header->ipHeader.src_ip);
-	packet_header->ipHeader.dst_ip = ntohl(packet_header->ipHeader.dst_ip);
-	packet_header->ipHeader.header_checksum = ntohs(packet_header->ipHeader.header_checksum);
-	packet_header->ipHeader.total_length = ntohs(packet_header->ipHeader.total_length);
-	packet_header->ipHeader.flags_fragmentation_offset = ntohs(packet_header->ipHeader.flags_fragmentation_offset);
-	packet_header->ipHeader.identification = ntohs(packet_header->ipHeader.identification);
-
-	packet_header->udpHeader.checksum = ntohs(packet_header->udpHeader.checksum);
-	packet_header->udpHeader.src_port = ntohs(packet_header->udpHeader.src_port);
-	packet_header->udpHeader.dst_port = ntohs(packet_header->udpHeader.dst_port);
-	packet_header->udpHeader.length = ntohs(packet_header->udpHeader.length);
-}
-
-void SimpleMachine::fix_received_data_not_msg_endianness(metadata *metaData){
-	metaData->local_port = ntohs(metaData->local_port);
-	metaData->local_ip = ntohs(metaData->local_ip);
-	metaData->public_port = ntohs(metaData->public_port);
-	metaData->public_ip = ntohs(metaData->public_ip);
-}
-
-void SimpleMachine::fix_sending_header_endianness(header *packet_header){
-	packet_header->ethernetHeader.type = htons(packet_header->ethernetHeader.type);
-
-	packet_header->ipHeader.src_ip = htonl(packet_header->ipHeader.src_ip);
-	packet_header->ipHeader.dst_ip = htonl(packet_header->ipHeader.dst_ip);
-	packet_header->ipHeader.header_checksum = htons(packet_header->ipHeader.header_checksum);
-	packet_header->ipHeader.total_length = htons(packet_header->ipHeader.total_length);
-	packet_header->ipHeader.flags_fragmentation_offset = htons(packet_header->ipHeader.flags_fragmentation_offset);
-	packet_header->ipHeader.identification = htons(packet_header->ipHeader.identification);
-
-	packet_header->udpHeader.checksum = htons(packet_header->udpHeader.checksum);
-	packet_header->udpHeader.src_port = htons(packet_header->udpHeader.src_port);
-	packet_header->udpHeader.dst_port = htons(packet_header->udpHeader.dst_port);
-	packet_header->udpHeader.length = htons(packet_header->udpHeader.length);
-}
-
-void SimpleMachine::fix_sending_data_not_msg_endianness(metadata *metaData){
-	metaData->public_ip = htons(metaData->public_ip);
-	metaData->public_port = htons(metaData->public_port);
-	metaData->local_ip = htons(metaData->local_ip);
-	metaData->local_port = htons(metaData->local_port);
+void SimpleMachine::printFrame(Frame &frame) {
+	std::cerr << "frame with length " << frame.length << std::endl;
+	for (uint32 i = 0; i < frame.length; ++i) {
+		std::cout << std::hex << std::setw(2) << std::setfill('0') << (unsigned int)(*(frame.data + i));
+	}
+	std::cout << std::dec;
+	std::cout << std::endl;
 }
