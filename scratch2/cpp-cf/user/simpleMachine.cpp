@@ -209,7 +209,7 @@ void SimpleMachine::fill_udp_header(udp_header *udpHeader,
 	udpHeader->src_port = htons(src_port);
 	udpHeader->dst_port = htons(dst_port);
 	udpHeader->length = htons(sizeof(udp_header) + sizeof(data_id) + data_length);
-	udpHeader->checksum = 0;
+	udpHeader->checksum = 0x00;
 }
 
 void SimpleMachine::fill_data_type_id(data_id *dataId,

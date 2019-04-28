@@ -42,7 +42,7 @@ ServerMachine::~ServerMachine () {
 }
 
 void ServerMachine::initialize () {
-	// TODO: Initialize your program here; interfaces are valid now.
+	current_free_id = 0;
 }
 
 /**
@@ -76,8 +76,6 @@ void ServerMachine::processFrame (Frame frame, int ifaceIndex) {
 
 	auto ethz = (packet *) frame.data;
 
-	// fix_received_header_endianness(&(ethz->hdr)); TODO
-
 	if ((ethz->hdr.ipHeader.protocol == 17) && (get_checksum(&(ethz->hdr.ipHeader), 20) == 0)){
 		if (ethz->hdr.ipHeader.dst_ip == htonl(iface[1].getIp())){
 			switch (detect_type(&(ethz->hdr))){
@@ -100,7 +98,7 @@ void ServerMachine::processFrame (Frame frame, int ifaceIndex) {
 			/* packet is not for this node. must pass on. */
 
 			// find the route
-			int i = find_sending_interface(ethz->hdr.ipHeader.dst_ip);
+			int i = find_sending_interface(ntohl(ethz->hdr.ipHeader.dst_ip));
 
 			// decrease the time and calculate the checksum again
 			ethz->hdr.ipHeader.TTL--;
@@ -143,9 +141,7 @@ void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
 	} __attribute__ ((packed));
 	auto ethz = (packet *)frame.data;
 
-	//fix_received_data_not_msg_endianness(&(ethz->md)); TODO
-
-	if (find_client_from_local_ip(ethz->md.local_ip) != -1){
+	if (find_client_from_local_ip(ntohs(ethz->md.local_ip)) != -1){
 		std::cout << "you already have an id, ignored" << std::endl;
 		return;
 	}
@@ -158,41 +154,37 @@ void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
 		byte *data = new byte[packet_length];
 		auto epfl = (packet *)data;
 
-		uint32 server_ip;
-		memset(&server_ip, 1, 4);
-		// TODO: is the sending interface the same as the interface we received this packet from?
-		int which_interface = find_sending_interface(ethz->md.local_ip);
-		// TODO: should the destination be the local one in the data?
+		uint32 server_ip = 0x01010101;
+		int which_interface = ifaceIndex;
+
 		fill_header(&(epfl->hdr),
 		            iface[ifaceIndex].mac,
 		            RESPONSE_ASSIGNING_ID, data_length,
-		            server_ip, ethz->md.local_ip,
-		            1234, ethz->md.local_port,
+		            server_ip, ntohl(ethz->hdr.ipHeader.src_ip),
+		            1234, ntohs(ethz->hdr.udpHeader.src_port),
 		            static_cast<uint8_t>(current_free_id));
 
 		// save this client's information
 		auto ci = new client_info;
 		ci->ID = current_free_id;
-		ci->addresses.local_port = ethz->md.local_port;
-		ci->addresses.local_ip = ethz->md.local_ip;
-		ci->addresses.public_ip = ethz->hdr.ipHeader.src_ip;
-		ci->addresses.public_port = ethz->hdr.udpHeader.src_port;
+		ci->addresses.local_port = ntohs(ethz->md.local_port);
+		ci->addresses.local_ip = ntohl(ethz->md.local_ip);
+		ci->addresses.public_ip = ntohl(ethz->hdr.ipHeader.src_ip);
+		ci->addresses.public_port = ntohs(ethz->hdr.udpHeader.src_port);
 		information.push_back(ci);
 
 		byte *temp_ip = new byte;
-		memcpy(temp_ip, &(ci->addresses.public_ip), 4);      //TODO: public is correct.
+		memcpy(temp_ip, &ci->addresses.public_ip, 4);      //TODO: public is correct.
 		auto buf = new char[100];
 		sprintf(buf, "new id %d assigned to %d.%d.%d.%d:%d",
 		        current_free_id,
-		        temp_ip[0], temp_ip[1], temp_ip[2], temp_ip[3],
-		        ntohs(ci->addresses.public_port));
+		        temp_ip[3], temp_ip[2], temp_ip[1], temp_ip[0],
+		        ci->addresses.public_port);
 		auto output = string(buf);
 		cout << output << endl;
 		delete[] buf;
 
 		current_free_id++;
-
-		//fix_sending_header_endianness(&(epfl->hdr)); TODO
 
 		Frame reply_frame ((uint32) packet_length, data);
 		sendFrame (reply_frame, which_interface);
@@ -203,7 +195,7 @@ void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
 void ServerMachine::receive_Request_getting_IP(Frame frame, int ifaceIndex) {
 	auto ethz = (header *)frame.data;
 
-	int idx_a = find_client_from_public_ip(ethz->ipHeader.src_ip);
+	int idx_a = find_client_from_public_ip(ntohl(ethz->ipHeader.src_ip));
 	int idx_b = find_client_from_ID(ethz->dataId.id);
 	if ((idx_a == -1) || (idx_b == -1)){
 		cout << "id not exist, dropped" << endl;
@@ -220,7 +212,6 @@ void ServerMachine::receive_Request_getting_IP(Frame frame, int ifaceIndex) {
 	delete[] buf;
 
 	int data_length = get_data_length(RESPONSE_GETTING_IP);
-//	int header_length = get_header_length();
 	int packet_length = SIZE_OF_HEADER + data_length;
 
 	byte *data = new byte[packet_length];
@@ -230,21 +221,18 @@ void ServerMachine::receive_Request_getting_IP(Frame frame, int ifaceIndex) {
 	} __attribute__ ((packed));
 	auto whole_packet = (packet *)data;
 
-	uint32 server_ip;
-	memset(&server_ip, 1, 4);
+	uint32 server_ip = 0x01010101;
 	fill_header(&(whole_packet->hdr),
 	            iface[ifaceIndex].mac,
 	            RESPONSE_GETTING_IP, data_length,
-	            server_ip, ethz->ipHeader.src_ip,
-	            1234, ethz->udpHeader.src_port,
+	            server_ip, ntohl(ethz->ipHeader.src_ip),
+	            1234, ntohs(ethz->udpHeader.src_port),
 	            ID_B);
-	whole_packet->md.public_ip = information[ID_B]->addresses.public_ip;
-	whole_packet->md.public_port = information[ID_B]->addresses.public_port;
-	whole_packet->md.local_ip = information[ID_B]->addresses.local_ip;
-	whole_packet->md.local_port = information[ID_A]->addresses.local_port;
 
-	//fix_sending_header_endianness(&(whole_packet->hdr)); TODO
-	//fix_sending_data_not_msg_endianness(&(whole_packet->md));
+	whole_packet->md.public_ip = htonl(information[idx_b]->addresses.public_ip);
+	whole_packet->md.public_port = htons(information[idx_b]->addresses.public_port);
+	whole_packet->md.local_ip = htonl(information[idx_b]->addresses.local_ip);
+	whole_packet->md.local_port = htons(information[idx_b]->addresses.local_port);
 
 	Frame frame_reply ((uint32) packet_length, data);
 	sendFrame (frame_reply, ifaceIndex);
@@ -259,12 +247,10 @@ void ServerMachine::receive_Request_updating_info(Frame frame)
 	} __attribute__ ((packed));
 	auto whole_packet = (packet *)frame.data;
 
-	//fix_received_data_not_msg_endianness(&(whole_packet->md)); TODO
-
 	int idx = find_client_from_ID(whole_packet->hdr.dataId.id);
 	if (idx != -1){
-		information[idx]->addresses.local_ip = whole_packet->md.local_ip;
-		information[idx]->addresses.local_port = whole_packet->md.local_port;
+		information[idx]->addresses.local_ip = ntohl(whole_packet->md.local_ip);
+		information[idx]->addresses.local_port = ntohs(whole_packet->md.local_port);
 		byte *temp_ip = new byte;
 		memcpy(temp_ip, &(information[idx]->addresses.local_ip), 4);
 
@@ -286,8 +272,6 @@ void ServerMachine::receive_status(Frame frame, int ifaceIndex) {
 	} __attribute__ ((packed));
 	auto ethz = (packet *)frame.data;
 
-//	fix_received_data_not_msg_endianness(&(ethz->md)); TODO
-
 	byte flag = (byte)((ethz->md.local_ip == ethz->hdr.ipHeader.src_ip) && (ethz->md.local_port == ethz->hdr.udpHeader.src_port));
 
 	int data_length = get_data_length(STATUS_RESPONSE);
@@ -295,20 +279,16 @@ void ServerMachine::receive_status(Frame frame, int ifaceIndex) {
 
 	byte *data = new byte[packet_length];
 	auto epfl = (packet *)data;
-	epfl->md.local_ip = 0;
-	epfl->md.local_port = 0;
+	epfl->md.local_ip = 0x00;
+	epfl->md.local_port = 0x0000;
 
-	uint32 server_ip;
-	memset(&server_ip, 1, 4);
+	uint32 server_ip = 0x01010101;
 	fill_header(&(epfl->hdr),
 	            iface[ifaceIndex].mac,
 	            STATUS_RESPONSE, data_length,
-	            server_ip, ethz->md.local_ip,
-	            1234, ethz->md.local_port,
+	            server_ip, ntohl(ethz->md.local_ip),
+	            1234, ntohs(ethz->md.local_port),
 	            flag);
-
-	//fix_sending_header_endianness(&(epfl->hdr)); TODO
-	//fix_sending_data_not_msg_endianness(&(epfl->md));
 
 	Frame frame_reply ((uint32) packet_length, data);
 	sendFrame (frame_reply, ifaceIndex);
@@ -323,7 +303,8 @@ int ServerMachine::find_client_from_public_ip(uint32 public_ip) {
 	}
 //	for (auto & itr : information){
 //		if(itr->addresses.public_ip == public_ip){      //TODO: return what?
-//			std::distance(information.begin(), itr);
+//			return std::distance(*information.begin(), itr);
+//			return itr - *information.begin();
 //		}
 //	}
 	return -1;

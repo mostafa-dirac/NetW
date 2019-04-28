@@ -87,43 +87,39 @@ void ClientMachine::processFrame (Frame frame, int ifaceIndex) {
 
 	auto ethz = (packet *) frame.data;
 
-	//fix_received_header_endianness(&(ethz->hdr)); TODO
 	if (ethz->hdr.ipHeader.TTL > 0){
-		//std::cout << "SHABLAND_CLIENT: no timeout" << std::endl;
 		if ((ethz->hdr.ipHeader.protocol == 17) && (get_checksum(&(ethz->hdr.ipHeader), 20) == 0)){
-			//std::cout << "SHABLAND_CLIENT: is valid" << std::endl;
-			if (ethz->hdr.ipHeader.dst_ip == iface[0].getIp()){
-				//std::cout << "SHABLAND_CLIENT: is mine" << std::endl;
+			if (ethz->hdr.ipHeader.dst_ip == htonl(iface[0].getIp())){
 				switch (detect_data_type(&(ethz->hdr), ethz->pl.message)){
 					case RESPONSE_ASSIGNING_ID:
-						receive_Response_assigning_ID_packet(frame, ifaceIndex);
+						receive_Response_assigning_ID_packet(frame);
 						break;
 					case DROP:
-						receive_drop_packet(frame, ifaceIndex);
+						receive_drop_packet(frame);
 						break;
 					case RESPONSE_GETTING_IP:
-						receive_Response_getting_IP_packet(frame, ifaceIndex);
+						receive_Response_getting_IP_packet(frame);
 						break;
 					case REQUEST_LOCAL_SESSION:
 						receive_Request_session_packet(frame, ifaceIndex, REQUEST_LOCAL_SESSION);
 						break;
 					case RESPONSE_LOCAL_SESSION:
-						receive_Response_session_packet(frame, ifaceIndex, RESPONSE_LOCAL_SESSION);
+						receive_Response_session_packet(frame, RESPONSE_LOCAL_SESSION);
 						break;
 					case REQUEST_PUBLIC_SESSION:
 						receive_Request_session_packet(frame, ifaceIndex, REQUEST_PUBLIC_SESSION);
 						break;
 					case RESPONSE_PUBLIC_SESSION:
-						receive_Response_session_packet(frame, ifaceIndex, RESPONSE_PUBLIC_SESSION);
+						receive_Response_session_packet(frame, RESPONSE_PUBLIC_SESSION);
 						break;
 					case MESSAGE:
-						receive_Message_packet(frame, ifaceIndex);
+						receive_Message_packet(frame);
 						break;
 					case NAT_UPDATED:
 						receive_NAT_updated_packet();
 						break;
 					case STATUS_RESPONSE:
-						receive_Status_Response_packet(frame, ifaceIndex);
+						receive_Status_Response_packet(frame);
 						break;
 					default:
 						break;
@@ -132,7 +128,7 @@ void ClientMachine::processFrame (Frame frame, int ifaceIndex) {
 				/* packet is not for this node. must pass on. */
 
 				// find the route
-				int i = find_sending_interface(ethz->hdr.ipHeader.dst_ip);
+				int i = find_sending_interface(ntohl(ethz->hdr.ipHeader.dst_ip));
 
 				// decrease the time and calculate the checksum again
 				ethz->hdr.ipHeader.TTL--;
@@ -153,30 +149,6 @@ void ClientMachine::processFrame (Frame frame, int ifaceIndex) {
  * Returning from this method will not finish the execution of the program.
  */
 void ClientMachine::run () {
-//  struct ethernet_header {
-//    byte  dst[6];
-//    byte  src[6];
-//    uint16 type;
-//  } __attribute__ ((packed));
-//
-//  const int frameLength = sizeof (ethernet_header) + 100;
-//  byte *data = new byte[frameLength];
-//
-//  ethernet_header *eth = (ethernet_header *) data;
-//  memset (eth->dst, 255, 6); // broadcast address
-//  memcpy (eth->src, iface[0].mac, 6);
-//  eth->type = htons (0x0800);
-//
-//  iphdr *packet = (iphdr *) (data + sizeof (ethernet_header));
-//  packet->version = 4;
-//  packet->ihl = 5;
-//  packet->tot_len = htons (100);
-//
-//  Frame frame (frameLength, data);
-//  sendFrame (frame, 0); // sends frame on interface 0
-//
-//  delete[] data;
-//  cerr << "now ./free.sh and check the pcap log file to see the sent packet" << endl;
 	while (true) {
 		auto input_info = new client_input;
 		parse_input(input_info);
@@ -262,7 +234,7 @@ data_type ClientMachine::detect_data_type(header *packet_header, char *dm) {
 			} else if (memcmp(dm, pong, 4) == 0){
 				return RESPONSE_LOCAL_SESSION;
 			}
-			return INVALID;     //TODO: SHARRI?
+			return INVALID;
 		}
 		case 3:
 			return MESSAGE;
@@ -277,7 +249,6 @@ data_type ClientMachine::detect_data_type(header *packet_header, char *dm) {
 
 void ClientMachine::make_connection(uint16_t PORT) {
 	int data_length = get_data_length(REQUEST_ASSIGNING_ID);
-//	int header_length = get_header_length(); //TODO
 	const int packet_length = SIZE_OF_HEADER + data_length;
 
 	byte *data = new byte[packet_length];
@@ -287,8 +258,7 @@ void ClientMachine::make_connection(uint16_t PORT) {
 	} __attribute__ ((packed));
 	auto whole_packet = (packet *)data;
 
-	uint32_t dest_ip;
-	memset(&dest_ip, 1, 4);
+	uint32_t dest_ip = 0x01010101;
 
 	fill_header(&(whole_packet->hdr),
 	            iface[0].mac,
@@ -296,33 +266,32 @@ void ClientMachine::make_connection(uint16_t PORT) {
 	            iface[0].getIp(), dest_ip,
 	            PORT, 1234,
 	            0);
-	whole_packet->msg.local_ip = iface[0].getIp();
-	whole_packet->msg.local_port = PORT;
+	whole_packet->msg.local_ip = htonl(iface[0].getIp());
+	whole_packet->msg.local_port = htons(PORT);
 
 	my_port = PORT;
-
-	//fix_sending_header_endianness(&(whole_packet->hdr)); TODO
-	//fix_sending_data_not_msg_endianness(&(whole_packet->msg));
 
 	Frame frame ((uint32) packet_length, data);
 	sendFrame (frame, 0);
 	delete[] data;
 }
 
-void ClientMachine::receive_drop_packet(Frame frame, int ifaceIndex){
+void ClientMachine::receive_drop_packet(Frame frame)
+{
 	auto ethz = (header *) frame.data;
-	if (ethz->udpHeader.src_port == 1234){
+	if (ntohs(ethz->udpHeader.src_port) == 1234){
 		my_port += 100;
 		make_connection(my_port);
 		cout << "connection to server failed, retrying on port " << my_port << endl;
-	} else if (ethz->udpHeader.src_port == 4321){
+	} else if (ntohs(ethz->udpHeader.src_port) == 4321){
 		if (connected && peer_info != nullptr){
 			cout << "connection lost, perhaps" << peer_ID << "'s info has changed, ask server for updates" << endl;
 		}
 	}
 }
 
-void ClientMachine::receive_Response_assigning_ID_packet(Frame frame, int ifaceIndex){
+void ClientMachine::receive_Response_assigning_ID_packet(Frame frame)
+{
 
 	auto ethz = (header *) frame.data;
 
@@ -336,22 +305,15 @@ void ClientMachine::receive_Response_assigning_ID_packet(Frame frame, int ifaceI
 }
 
 void ClientMachine::get_id_info(byte ID) {
-	// we want to find the ip of this ID, therefor we will send a Request getting IP packet to the server
 	int data_length = get_data_length(REQUEST_GETTING_IP);
-//	int header_length = get_header_length();
 	const int packet_length = SIZE_OF_HEADER + data_length;
 
-	// initialize the byte stream
 	byte *data = new byte[packet_length];
 
-	// this packet has no data
 	auto ethz = (header *)data;
 
-	// SERVER: 1.1.1.1
-	uint32_t dest_ip;
-	memset(&dest_ip, 1, 4);
+	uint32_t dest_ip = 0x01010101;
 
-	// we will send it from interface 0, and with the querying ID
 	fill_header(ethz,
 	            iface[0].mac,
 	            REQUEST_GETTING_IP, data_length,
@@ -359,48 +321,48 @@ void ClientMachine::get_id_info(byte ID) {
 	            my_port, 1234,
 	            ID);
 
-	//fix_sending_header_endianness(ethz); TODO
-
-	// send frame on interface 0
 	Frame frame ((uint32) packet_length, data);
 	sendFrame (frame, 0);
 	delete[] data;
 }
 
-void ClientMachine::receive_Response_getting_IP_packet(Frame frame, int ifaceIndex) {
+void ClientMachine::receive_Response_getting_IP_packet(Frame frame)
+{
 	struct packet {
 		header hdr;
 		metadata msg;
 	} __attribute__ ((packed));
 	auto ethz = (packet *)frame.data;
 
-	// fix_received_data_not_msg_endianness(&(ethz->msg)); TODO
+	if (peer_info == nullptr){
+		peer_info = new metadata;
+	}
+	peer_info->local_ip = ntohl(ethz->msg.local_ip);
+	peer_info->local_port = ntohs(ethz->msg.local_port);
+	peer_info->public_ip = ntohl(ethz->msg.public_ip);
+	peer_info->public_port = ntohs(ethz->msg.public_port);
+	peer_ID = ethz->hdr.dataId.id;
+	connected = false;
+
 
 	char *buf = new char[200];
 	byte *local_ip = new byte[4];
-	memcpy(local_ip, &(ethz->msg.local_ip), 4);
+	memcpy(local_ip, &ethz->msg.local_ip, 4);
 	byte *public_ip = new byte[4];
-	memcpy(public_ip, &(ethz->msg.public_ip), 4);
+	memcpy(public_ip, &ethz->msg.public_ip, 4);
 	sprintf(buf, "packet with (%d, %d.%d.%d.%d, %d, %d.%d.%d.%d, %d) received",
 	        ethz->hdr.dataId.id,
-	        local_ip[3], local_ip[2], local_ip[1], local_ip[0],
+	        local_ip[0], local_ip[1], local_ip[2], local_ip[3],
 	        ethz->msg.local_port,
-	        public_ip[3], public_ip[2], public_ip[1], public_ip[0],
+	        public_ip[0], public_ip[1], public_ip[2], public_ip[3],
 	        ethz->msg.public_port);
 	auto output = string(buf);
 	cout << output << endl;
 	delete[] buf;
-
-	if (peer_info == nullptr){
-		peer_info = new metadata;
-	}
-	memcpy(peer_info, &(ethz->msg), 12);
-	peer_ID = ethz->hdr.dataId.id;
-	connected = false;
 }
 
 void ClientMachine::make_session(byte ID, data_type session_kind) {
-	// information was not received yet. we do not know the IP.
+
 	if (peer_info == nullptr || peer_ID != ID){
 		char *buf = new char[50];
 		sprintf(buf, "info of node %d was not received", ID);
@@ -410,11 +372,9 @@ void ClientMachine::make_session(byte ID, data_type session_kind) {
 		return;
 	}
 
-	// specify the session kind
 	peer_session_kind = session_kind;
 
 	int data_length = get_data_length(session_kind);
-//	int header_length = get_header_length();
 	const int packet_length = SIZE_OF_HEADER + data_length;
 
 	byte *data = new byte[packet_length];
@@ -441,8 +401,6 @@ void ClientMachine::make_session(byte ID, data_type session_kind) {
 	char ping[4] = {'p','i','n','g'};
 	memcpy(ethz->pl.message, ping, 4);
 
-	//fix_sending_header_endianness(&(ethz->hdr));
-
 	Frame frame ((uint32) packet_length, data);
 	sendFrame (frame, which_interface);
 	delete[] data;
@@ -451,7 +409,6 @@ void ClientMachine::make_session(byte ID, data_type session_kind) {
 void ClientMachine::receive_Request_session_packet(Frame frame, int ifaceIndex,
                                                    data_type session_kind) {
 	int data_length = get_data_length(session_kind);
-//	int header_length = get_header_length();
 	const int packet_length = SIZE_OF_HEADER + data_length;
 
 	struct packet {
@@ -460,27 +417,36 @@ void ClientMachine::receive_Request_session_packet(Frame frame, int ifaceIndex,
 	} __attribute__ ((packed));
 
 	auto ethz = (packet *)frame.data;
-	//fix_received_header_endianness(&(ethz->hdr)); TODO
 
 	char ping[4] = {'p','i','n','g'};
 	char pong[4] = {'p','o','n','g'};
+
 	if (memcmp(ping, ethz->pl.message, 4) == 0){
 		if (!check_connection(ethz->hdr.dataId.id)){
 			peer_ID = ethz->hdr.dataId.id;
 			connected = true;
 			peer_session_kind = session_kind;
 
+			peer_info = new metadata;
+			peer_info->local_ip = ntohl(ethz->hdr.ipHeader.src_ip);
+			peer_info->public_ip = ntohl(ethz->hdr.ipHeader.src_ip);
+			peer_info->public_port = ntohs(ethz->hdr.udpHeader.src_port);
+			peer_info->local_port = ntohs(ethz->hdr.udpHeader.src_port);
+
+			auto buf = new char[50];
+			sprintf(buf, "Connected to %d", peer_ID);
+			auto output = string(buf);
+			cout << output << endl;
+			delete [] buf;
+
 			byte *data = new byte[packet_length];
 			auto epfl = (packet *)data;
 			data_type reply_session = (session_kind == REQUEST_LOCAL_SESSION) ?
 			                          RESPONSE_LOCAL_SESSION : RESPONSE_PUBLIC_SESSION;
-			fill_header(&(epfl->hdr),
-			            iface[ifaceIndex].mac,
-			            reply_session, get_data_length(reply_session),
-			            ethz->hdr.ipHeader.dst_ip, ethz->hdr.ipHeader.src_ip,
-			            ethz->hdr.udpHeader.dst_port, ethz->hdr.udpHeader.src_port,
+			fill_header(&(epfl->hdr), iface[ifaceIndex].mac, reply_session, get_data_length(reply_session),
+			            ntohl(ethz->hdr.ipHeader.dst_ip), ntohl(ethz->hdr.ipHeader.src_ip),
+			            ntohs(ethz->hdr.udpHeader.dst_port), ntohs(ethz->hdr.udpHeader.src_port),
 			            my_ID);
-			//fix_sending_header_endianness(&(epfl->hdr)); TODO
 
 			memcpy(ethz->pl.message, pong, 4);
 
@@ -495,25 +461,20 @@ bool ClientMachine::check_connection(byte ID) {
 	return peer_ID == ID && connected && peer_info != nullptr;
 }
 
-void ClientMachine::receive_Response_session_packet(Frame frame, int ifaceIndex, data_type session_kind) {
+void ClientMachine::receive_Response_session_packet(Frame frame, data_type session_kind)
+{
 	struct packet {
 		header hdr;
 		payload pl;
 	} __attribute__ ((packed));
 
 	auto ethz = (packet *)frame.data;
-	// fix_received_header_endianness(&(ethz->hdr)); TODO
 
 	char pong[4] = {'p','o','n','g'};
-	// the message contains pong
 	if (memcmp(pong, ethz->pl.message, 4) == 0){
-		// we have tried to establish connection before
 		if (ethz->hdr.dataId.id == peer_ID){
-			// we have not connected yet (received pong before)
 			if (!connected){
-				// the correct session kind
 				if (session_kind == peer_session_kind){
-					// we are now connected
 					connected = true;
 					char *buf = new char[50];
 					sprintf(buf, "Connected to %d", peer_ID);
@@ -528,12 +489,9 @@ void ClientMachine::receive_Response_session_packet(Frame frame, int ifaceIndex,
 }
 
 void ClientMachine::send_message(byte ID, char *msg, int msg_length) {
-	// check that we can send message
 	if (check_connection(ID)){
 		int data_length = msg_length;
-//		int header_length = get_header_length();
 		const int packet_length = SIZE_OF_HEADER + data_length;
-
 		byte *data = new byte[packet_length];
 
 		struct packet {
@@ -558,7 +516,6 @@ void ClientMachine::send_message(byte ID, char *msg, int msg_length) {
 		            my_ID);
 		memcpy(ethz->pl.message, msg, static_cast<size_t>(msg_length));
 
-		//fix_sending_header_endianness(&(ethz->hdr)); TODO
 
 		Frame frame ((uint32) packet_length, data);
 		sendFrame (frame, which_interface);
@@ -568,21 +525,25 @@ void ClientMachine::send_message(byte ID, char *msg, int msg_length) {
 	}
 }
 
-void ClientMachine::receive_Message_packet(Frame frame, int ifaceIndex) {
+void ClientMachine::receive_Message_packet(Frame frame)
+{
 	struct packet {
 		header hdr;
 		payload pl;
 	} __attribute__ ((packed));
 
 	auto ethz = (packet *)frame.data;
-	// fix_received_header_endianness(&(ethz->hdr)); TODO
 
 	if (check_connection(ethz->hdr.dataId.id)){
 		char *buf = new char[50];
 		sprintf(buf, "received message from %d:", ethz->hdr.dataId.id);
 		auto output = string(buf);
-		cout << output;
-		cout << ethz->pl.message << endl;
+//		cout << output;
+		size_t len = ntohs(ethz->hdr.udpHeader.length) - sizeof(udp_header) - sizeof(data_id);
+		ethz->pl.message[len] = '\0';
+		output = output + string(ethz->pl.message);     //TODO: DANGER.
+//		cout << ethz->pl.message << endl;
+		cout << output << endl;
 		delete[] buf;
 	}
 }
@@ -590,7 +551,6 @@ void ClientMachine::receive_Message_packet(Frame frame, int ifaceIndex) {
 
 void ClientMachine::receive_NAT_updated_packet() {
 	int data_length = get_data_length(REQUEST_UPDATING_INFO);
-//	int header_length = get_header_length();
 	const int packet_length = SIZE_OF_HEADER + data_length;
 
 	byte *data = new byte[packet_length];
@@ -604,17 +564,12 @@ void ClientMachine::receive_NAT_updated_packet() {
 
 	uint32_t dest_ip;
 	memset(&dest_ip, 1, 4);
-	fill_header(&(ethz->hdr),
-	            iface[0].mac,
-	            REQUEST_UPDATING_INFO, data_length,
+	fill_header(&(ethz->hdr), iface[0].mac, REQUEST_UPDATING_INFO, data_length,
 	            iface[0].getIp(), dest_ip,
-	            my_port, 1234,
-	            my_ID);
-	ethz->md.local_port = my_port;
-	ethz->md.local_ip = iface[0].getIp();
+	            my_port, 1234, my_ID);
 
-	//fix_sending_header_endianness(&(ethz->hdr));
-	//fix_sending_data_not_msg_endianness(&(ethz->md)); TODO
+	ethz->md.local_port = htons(my_port);
+	ethz->md.local_ip = htonl(iface[0].getIp());
 
 	Frame frame ((uint32) packet_length, data);
 	sendFrame (frame, 0);
@@ -623,7 +578,6 @@ void ClientMachine::receive_NAT_updated_packet() {
 
 void ClientMachine::ask_status() {
 	int data_length = get_data_length(STATUS);
-//	int header_length = get_header_length();
 	const int packet_length = SIZE_OF_HEADER + data_length;
 
 	byte *data = new byte[packet_length];
@@ -635,26 +589,21 @@ void ClientMachine::ask_status() {
 
 	auto ethz = (packet *)data;
 
-	uint32_t dest_ip;
-	memset(&dest_ip, 1, 4);
-	fill_header(&(ethz->hdr),
-	            iface[0].mac,
-	            STATUS, data_length,
+	uint32_t dest_ip = 0x01010101;
+	fill_header(&(ethz->hdr), iface[0].mac, STATUS, data_length,
 	            iface[0].getIp(), dest_ip,
 	            my_port, 1234,
 	            0);
-	ethz->md.local_ip = iface[0].getIp();
-	ethz->md.local_port = my_port;
-
-	//fix_sending_header_endianness(&(ethz->hdr));
-	//fix_sending_data_not_msg_endianness(&(ethz->md)); TODO
+	ethz->md.local_ip = htonl(iface[0].getIp());
+	ethz->md.local_port = htons(my_port);
 
 	Frame frame ((uint32) packet_length, data);
 	sendFrame(frame, 0);
 	delete[] data;
 }
 
-void ClientMachine::receive_Status_Response_packet(Frame frame, int ifaceIndex) {
+void ClientMachine::receive_Status_Response_packet(Frame frame)
+{
 	struct packet {
 		header hdr;
 		payload pl;
@@ -662,12 +611,10 @@ void ClientMachine::receive_Status_Response_packet(Frame frame, int ifaceIndex) 
 
 	auto ethz = (packet *)frame.data;
 
-	// fix_received_header_endianness(&(ethz->hdr)); TODO
-
 	if (ethz->hdr.dataId.id == 0){
-		std::cout << "indirect" << std::endl;
+		cout << "indirect" << endl;
 	} else if (ethz->hdr.dataId.id == 1){
-		std::cout << "direct" << std::endl;
+		cout << "direct" << endl;
 	}
 }
 

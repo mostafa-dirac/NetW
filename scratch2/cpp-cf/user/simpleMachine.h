@@ -46,7 +46,7 @@ struct ip_header {
 	uint8_t DSCP_ECN;
 	uint16_t total_length;
 	uint16_t identification;
-	uint16_t flags_fragmentation_offset; //TODO: BIT Feild?
+	uint16_t flags_fragmentation_offset;
 	uint8_t TTL;
 	uint8_t protocol;
 	uint16_t header_checksum;
@@ -62,8 +62,15 @@ struct udp_header{
 } __attribute__ ((packed));
 
 struct data_id{
-	uint8_t data_type:3;
-	uint8_t id:5;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	unsigned int id:5;
+	unsigned int data_type:3;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	unsigned int data_type:3;
+    unsigned int id:5;
+#else
+# error  "Please fix <bits/endian.h>"
+#endif
 } __attribute__ ((packed));
 
 struct header{
@@ -75,7 +82,7 @@ struct header{
 
 struct payload{
 	char message[50];
-} __attribute__ ((packed));
+} __attribute__ ((packed));             //TODO: haminja hame chiz kharab mishe
 
 struct metadata{
 	uint32_t local_ip;
@@ -127,14 +134,9 @@ public:
 	static uint16_t get_checksum(const void *buf, size_t buf_len);      //TODO: really static?
 	static uint8_t get_data_type(data_type type);
 	static uint16_t get_data_length(data_type type);
-	static void fill_header(header *packet_header,
-	                 byte *mac,
-	                 data_type type,
-	                 int data_length,
-	                 uint32 src_ip,
-	                 uint32 dst_ip,
-	                 uint16_t src_port,
-	                 uint16_t dst_port,
+	static void fill_header(header *packet_header, byte *mac, data_type type, int data_length,
+	                 uint32 src_ip, uint32 dst_ip,
+	                 uint16_t src_port, uint16_t dst_port,
 	                 uint8_t ID);
 	static void fill_ethernet(ethernet_header *packet_header, byte *MAC);
 	static void fill_ip_header(ip_header *packet_ip_header, int data_length, uint32 src_ip, uint32 dst_ip);
