@@ -70,7 +70,54 @@ void NatMachine::initialize () {
  * </code>
  */
 void NatMachine::processFrame (Frame frame, int ifaceIndex) {
+	auto ethz = (header *) frame.data;
+	int client_idx, ifidx;
+	if (ifaceIndex == 0){
+		client_idx = find_in_outer_table(ntohl(ethz->ipHeader.dst_ip), ntohs(ethz->udpHeader.dst_port));
 
+		if (client_idx == -1){
+			return;
+		}
+
+		int family_idx = find_in_session(ntohl(ethz->ipHeader.dst_ip), ntohs(ethz->udpHeader.dst_port), ntohl(ethz->ipHeader.src_ip), ntohs(ethz->udpHeader.src_port));
+
+		if (family_idx == -1){
+			cout << "outer packet dropped" << endl;
+		}
+
+		ifidx = find_sending_interface(table[client_idx]->local_ip);
+		ethz->ipHeader.dst_ip = htonl(table[client_idx]->local_ip);
+		ethz->udpHeader.dst_port = htons(table[client_idx]->local_port);
+		sendFrame(frame, ifidx);
+	}
+	else{
+		if (!valid_in_range(ntohs(ethz->udpHeader.src_port))){
+			return;
+		}
+		client_idx = find_in_local_table(ntohl(ethz->ipHeader.src_ip), ntohs(ethz->udpHeader.src_port));
+		if (client_idx == -1){
+			address new_address = calculate_new_address();
+			auto new_meta = new metadata;
+			new_meta->public_ip = new_address.ip;
+			new_meta->public_port = new_address.port;
+			new_meta->local_port = ntohs(ethz->udpHeader.src_port);
+			new_meta->local_ip = ntohl(ethz->ipHeader.src_ip);
+			table.push_back(new_meta);
+			client_idx = table.size() - 1;
+		}
+		auto ns = new Session;
+		ns->local_ip = table[client_idx]->public_ip;
+		ns->local_port = table[client_idx]->public_port;
+		ns->outer_ip = ntohl(ethz->ipHeader.dst_ip);
+		ns->outer_port = ntohs(ethz->udpHeader.dst_port);
+		sessions.push_back(ns);
+
+		ethz->ipHeader.src_ip = htonl(table[client_idx]->public_ip);
+		ethz->udpHeader.src_port =htons(table[client_idx]->public_port);
+
+		ifidx = find_sending_interface(ntohl(ethz->ipHeader.dst_ip));
+		sendFrame(frame, ifidx);
+	}
 }
 
 
@@ -79,7 +126,40 @@ void NatMachine::processFrame (Frame frame, int ifaceIndex) {
  * Returning from this method will not finish the execution of the program.
  */
 void NatMachine::run () {
+	while (true) {
+		auto input_info = new nat_input;
+		parse_input(input_info);
 
+		switch (input_info->i_type) {
+			case BLOCK_RANGE:
+				block_range(input_info->min, input_info->max);
+				break;
+			case RESET:
+				reset_setting();
+				break;
+			default:
+				cout << "invalid command" << endl;
+		}
+	}
+}
+
+void NatMachine::parse_input(nat_input *input_info){
+	memset(input_info, 0, sizeof(nat_input));
+
+	string command;
+	getline(cin, command);
+	vector<string> command_info = split(command, ' ');
+
+	regex block_port_in_range("block port range .*");
+	regex reset_setting("reset_setting network settings");
+
+	if (regex_match(command, block_port_in_range)){
+		input_info->i_type = BLOCK_RANGE;
+		input_info->min = static_cast<uint16>(stoi(command_info[3]));
+		input_info->max = static_cast<uint16>(stoi(command_info[4]));
+	} else if (regex_match(command, reset_setting)){
+		input_info->i_type = RESET;
+	}
 }
 
 address NatMachine::calculate_new_address(){
@@ -92,10 +172,62 @@ address NatMachine::calculate_new_address(){
 
 bool NatMachine::valid_in_range(uint16_t port){
 	for (auto & itr : blocked_range){ // blocked_range.begin() ; itr < blocked_range.end() ; itr++
-		if (port <= itr.end && port >= itr.begin){
+		if (port <= itr->end && port >= itr->begin){
 			return false;
 		}
 	}
 	return true;
 }
 
+int NatMachine::find_in_local_table(uint32_t local_ip, uint16_t local_port){
+	for (int i = 0 ; i < table.size() ; i++){
+		if ((table[i]->local_ip == local_ip) && (table[i]->local_port == local_port)){
+			return i;                                             //TODO: iterator?????????????????????????
+		}
+	}
+	return -1;
+}
+
+int NatMachine::find_in_outer_table(uint32_t public_ip, uint16_t public_port){
+	for (int i = 0 ; i < table.size() ; i++){
+		if ((table[i]->public_ip == public_ip) && (table[i]->public_port == public_port)){
+			return i;
+		}
+	}
+	return -1;
+}
+
+int NatMachine::find_in_session(uint32_t local_ip, uint16_t local_port, uint32_t outer_ip, uint16_t outer_port){
+	for (int i = 0; i < sessions.size(); ++i) {
+		if (sessions[i]->local_ip == local_ip && sessions[i]->local_port == local_port &&
+			sessions[i]->outer_ip == outer_ip && sessions[i]->outer_port == outer_port){
+			return i;
+		}
+	}
+	return -1;
+}
+
+void NatMachine::block_range(uint16_t min, uint16_t max){
+	auto blk_range = new Range;
+	blk_range->begin = min;
+	blk_range->end = max;
+	blocked_range.push_back(blk_range);
+}
+
+void NatMachine::reset_setting(){
+	for (int i = 0; i < sessions.size() ; ++i) {
+
+	}
+}
+
+int NatMachine::find_sending_interface(uint32 dst_ip_hdr) {
+	int count = getCountOfInterfaces();
+	for (int i = 0; i < count; ++i) {
+		uint32 left = this->iface[i].getIp() & this->iface[i].getMask();
+		uint32 right = dst_ip_hdr & this->iface[i].getMask();
+		if (left == right){
+			return i;
+		}
+	}
+	return 0;
+}

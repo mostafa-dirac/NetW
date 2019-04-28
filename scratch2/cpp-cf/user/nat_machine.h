@@ -28,6 +28,17 @@
 #include "simpleMachine.h"
 #include "sm.h"
 
+enum input_type_nat{
+	BLOCK_RANGE = 1,
+	RESET
+};
+
+struct nat_input {
+	input_type_nat i_type;
+	uint16_t min;
+	uint16_t max;
+};
+
 struct Session{
 	uint32_t local_ip;
 	uint16_t local_port;
@@ -48,8 +59,8 @@ struct address{
 class NatMachine: public SimpleMachine {
 public:
 
-	std::vector<Range> blocked_range;
-	std::vector<Session> sessions;
+	std::vector<Range*> blocked_range;
+	std::vector<Session*> sessions;
 	std::vector<metadata*> table;
 
 	uint16_t base_port;
@@ -63,6 +74,13 @@ public:
 	virtual void processFrame (Frame frame, int ifaceIndex);
 	address calculate_new_address();
 	bool valid_in_range(uint16_t port);
+	int find_in_local_table(uint32_t local_ip, uint16_t local_port);
+	int find_in_session(uint32_t local_ip, uint16_t local_port, uint32_t outer_ip, uint16_t outer_port);
+	void parse_input(nat_input *input_info);
+	void block_range(uint16_t min, uint16_t max);
+	void reset_setting();
+	int find_in_outer_table(uint32_t public_ip, uint16_t public_port);
+	int find_sending_interface(uint32 dst_ip_hdr);
 };
 
 #endif

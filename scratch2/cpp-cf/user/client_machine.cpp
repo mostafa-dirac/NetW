@@ -475,7 +475,6 @@ void ClientMachine::receive_Response_session_packet(Frame frame, data_type sessi
 	} __attribute__ ((packed));
 
 	auto ethz = (packet *)frame.data;
-
 	char pong[4] = {'p','o','n','g'};
 	if (memcmp(pong, ethz->pl.message, 4) == 0){
 		if (ethz->hdr.dataId.id == peer_ID){
@@ -488,7 +487,7 @@ void ClientMachine::receive_Response_session_packet(Frame frame, data_type sessi
 					cout << output << endl;
 					delete[] buf;
 					return;
-			//	}
+			//	}htonl(iface[1].getIp())
 			}
 		}
 	}
