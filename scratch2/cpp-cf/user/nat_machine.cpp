@@ -70,28 +70,67 @@ void NatMachine::initialize () {
  * </code>
  */
 void NatMachine::processFrame (Frame frame, int ifaceIndex) {
+	struct packet {
+		header hdr;
+		payload pl;
+	} __attribute__ ((packed));
 	auto ethz = (header *) frame.data;
 	int client_idx, ifidx;
+	int data_length = get_data_length(DROP);
+	const int packet_length = SIZE_OF_HEADER + data_length;
+	byte *data = new byte[packet_length];
+	auto epfl = (packet *)data;
+	char drop[4] = {'d','r','o','p'};
+
 	if (ifaceIndex == 0){
 		client_idx = find_in_outer_table(ntohl(ethz->ipHeader.dst_ip), ntohs(ethz->udpHeader.dst_port));
 
 		if (client_idx == -1){
+			delete[] data;
 			return;
 		}
 
 		int family_idx = find_in_session(ntohl(ethz->ipHeader.dst_ip), ntohs(ethz->udpHeader.dst_port), ntohl(ethz->ipHeader.src_ip), ntohs(ethz->udpHeader.src_port));
 
 		if (family_idx == -1){
+			ifidx = find_sending_interface(ntohl(ethz->ipHeader.src_ip));
+			fill_header(&(epfl->hdr),
+			            iface[ifidx].mac,
+			            DROP, data_length,
+			            iface[0].getIp(), ntohl(ethz->ipHeader.src_ip),
+			            4321, ntohs(ethz->udpHeader.src_port),
+			            0);
+			memcpy(epfl->pl.message, drop, 4);
+			Frame new_frame ((uint32) packet_length, data);
+			sendFrame (new_frame, ifidx);
+			delete[] data;
 			cout << "outer packet dropped" << endl;
+			return;
 		}
 
 		ifidx = find_sending_interface(table[client_idx]->local_ip);
 		ethz->ipHeader.dst_ip = htonl(table[client_idx]->local_ip);
 		ethz->udpHeader.dst_port = htons(table[client_idx]->local_port);
+		ethz->ipHeader.TTL--;
+		ethz->ipHeader.header_checksum = 0;
+		ethz->ipHeader.header_checksum = get_checksum(&(ethz->ipHeader), 20);
 		sendFrame(frame, ifidx);
 	}
 	else{
 		if (!valid_in_range(ntohs(ethz->udpHeader.src_port))){
+
+			ifidx = find_sending_interface(ntohl(ethz->ipHeader.src_ip));
+			fill_header(&(epfl->hdr),
+			            iface[ifidx].mac,
+			            DROP, data_length,
+			            iface[0].getIp(), ntohl(ethz->ipHeader.src_ip),
+			            1234, ntohs(ethz->udpHeader.src_port),
+			            0);
+
+			memcpy(epfl->pl.message, drop, 4);
+			Frame new_frame ((uint32) packet_length, data);
+			sendFrame (new_frame, ifidx);
+			delete[] data;
 			return;
 		}
 		client_idx = find_in_local_table(ntohl(ethz->ipHeader.src_ip), ntohs(ethz->udpHeader.src_port));
@@ -114,10 +153,13 @@ void NatMachine::processFrame (Frame frame, int ifaceIndex) {
 
 		ethz->ipHeader.src_ip = htonl(table[client_idx]->public_ip);
 		ethz->udpHeader.src_port =htons(table[client_idx]->public_port);
-
+		ethz->ipHeader.TTL--;
+		ethz->ipHeader.header_checksum = 0;
+		ethz->ipHeader.header_checksum = get_checksum(&(ethz->ipHeader), 20);
 		ifidx = find_sending_interface(ntohl(ethz->ipHeader.dst_ip));
 		sendFrame(frame, ifidx);
 	}
+	delete[] data;
 }
 
 

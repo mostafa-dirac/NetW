@@ -77,7 +77,7 @@ void ServerMachine::processFrame (Frame frame, int ifaceIndex) {
 	auto ethz = (packet *) frame.data;
 
 	if ((ethz->hdr.ipHeader.protocol == 17) && (get_checksum(&(ethz->hdr.ipHeader), 20) == 0)){
-		if (ethz->hdr.ipHeader.dst_ip == 0x01010101){//htonl(iface[1].getIp())
+		if (ethz->hdr.ipHeader.dst_ip == 0x01010101){
 			switch (detect_type(&(ethz->hdr))){
 				case REQUEST_ASSIGNING_ID:
 					receive_Request_assigning_ID(frame, ifaceIndex);

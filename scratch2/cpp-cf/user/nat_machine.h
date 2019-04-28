@@ -37,24 +37,24 @@ struct nat_input {
 	input_type_nat i_type;
 	uint16_t min;
 	uint16_t max;
-};
+} __attribute__((packed));
 
 struct Session{
 	uint32_t local_ip;
 	uint16_t local_port;
 	uint32_t outer_ip;
 	uint16_t outer_port;
-};
+}__attribute__ ((packed));
 
 struct Range{
 	uint16_t begin;
 	uint16_t end;
-};
+}__attribute__ ((packed));
 
 struct address{
 	uint32_t ip;
 	uint16_t port;
-};
+}__attribute__ ((packed));
 
 class NatMachine: public SimpleMachine {
 public:
