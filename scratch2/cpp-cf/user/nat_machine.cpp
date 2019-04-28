@@ -73,7 +73,7 @@ void NatMachine::processFrame (Frame frame, int ifaceIndex) {
 	auto ethz = (header *) frame.data;
 	int client_idx, ifidx;
 	int data_length = get_data_length(DROP);
-	const int packet_length = SIZE_OF_HEADER + data_length;
+	int packet_length = SIZE_OF_HEADER + data_length;
 	byte *data = new byte[packet_length];
 	auto epfl = (packet_pl *)data;
 	char drop[4] = {'d','r','o','p'};
@@ -220,7 +220,7 @@ bool NatMachine::valid_in_range(uint16_t port){
 int NatMachine::find_in_local_table(uint32_t local_ip, uint16_t local_port){
 	for (int i = 0 ; i < table.size() ; i++){
 		if ((table[i]->local_ip == local_ip) && (table[i]->local_port == local_port)){
-			return i;                                             //TODO: iterator?????????????????????????
+			return i;
 		}
 	}
 	return -1;

@@ -65,13 +65,9 @@ std::vector<std::string> SimpleMachine::split(std::string str, char delimiter)
 }
 
 uint16_t SimpleMachine::get_checksum(const void *buf, size_t buf_len){
-	// Cast the data pointer to one that can be indexed.
 	char* data=(char*)buf;
-
-	// Initialise the accumulator.
 	uint32_t acc=0xffff;
 
-	// Handle complete 16-bit blocks.
 	for (size_t i=0;i+1<buf_len;i+=2) {
 		uint16_t word;
 		memcpy(&word,data+i,2);
@@ -81,7 +77,6 @@ uint16_t SimpleMachine::get_checksum(const void *buf, size_t buf_len){
 		}
 	}
 
-	// Handle any partial block at the end of the data.
 	if (buf_len&1) {
 		uint16_t word=0;
 		memcpy(&word,data+buf_len-1,1);
@@ -91,7 +86,6 @@ uint16_t SimpleMachine::get_checksum(const void *buf, size_t buf_len){
 		}
 	}
 
-	// Return the checksum in network byte order.
 	return htons(~acc);
 }
 
