@@ -45,14 +45,14 @@ public:
 	virtual void run ();
 	virtual void processFrame (Frame frame, int ifaceIndex);
 	static data_type detect_type(header *packet_header);
-	void receive_Request_assigning_ID(Frame frame, int ifaceIndex);
-	void receive_Request_getting_IP(Frame frame, int ifaceIndex);
-	void receive_Request_updating_info(Frame frame);
+	void rec_request_id(Frame frame, int ifaceIndex);
+	void rec_ip_request(Frame frame, int ifaceIndex);
+	void rec_update_request(Frame frame);
 	void receive_status(Frame frame, int ifaceIndex);
-	int find_client_from_public_ip(uint32 public_ip, uint16_t public_port);
-	int find_client_from_ID(byte ID);
-	int find_client_from_local_ip(uint32 local_ip);
-	virtual int find_sending_interface(uint32 dst_ip_hdr);
+	int find_client_by_public(uint32 public_ip, uint16_t public_port);
+	int find_client_by_ID(byte ID);
+	int find_client_by_local(uint32 local_ip);
+	int find_gateway(uint32 dst_ip_hdr);
 };
 
 #endif

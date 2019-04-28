@@ -75,13 +75,13 @@ void ServerMachine::processFrame (Frame frame, int ifaceIndex) {
 		if (ethz->hdr.ipHeader.dst_ip == 0x01010101){
 			switch (detect_type(&(ethz->hdr))){
 				case REQUEST_ASSIGNING_ID:
-					receive_Request_assigning_ID(frame, ifaceIndex);
+					rec_request_id(frame, ifaceIndex);
 					break;
 				case REQUEST_GETTING_IP:
-					receive_Request_getting_IP(frame, ifaceIndex);
+					rec_ip_request(frame, ifaceIndex);
 					break;
 				case REQUEST_UPDATING_INFO:
-					receive_Request_updating_info(frame);
+					rec_update_request(frame);
 					break;
 				case STATUS:
 					receive_status(frame, ifaceIndex);
@@ -90,7 +90,7 @@ void ServerMachine::processFrame (Frame frame, int ifaceIndex) {
 					break;
 			}
 		} else {
-			int i = find_sending_interface(ntohl(ethz->hdr.ipHeader.dst_ip));
+			int i = find_gateway(ntohl(ethz->hdr.ipHeader.dst_ip));
 			ethz->hdr.ipHeader.TTL--;
 			ethz->hdr.ipHeader.header_checksum = 0;
 			ethz->hdr.ipHeader.header_checksum = get_checksum(&(ethz->hdr.ipHeader), 20);
@@ -124,10 +124,10 @@ data_type ServerMachine::detect_type(header *packet_header) {
 	}
 }
 
-void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
+void ServerMachine::rec_request_id(Frame frame, int ifaceIndex) {
 	auto ethz = (packet_md *)frame.data;
 
-	if (find_client_from_local_ip(ntohs(ethz->md.local_ip)) != -1){
+	if (find_client_by_local(ntohs(ethz->md.local_ip)) != -1){
 		return;
 	}
 
@@ -170,11 +170,11 @@ void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
 	}
 }
 
-void ServerMachine::receive_Request_getting_IP(Frame frame, int ifaceIndex) {
+void ServerMachine::rec_ip_request(Frame frame, int ifaceIndex) {
 	auto ethz = (header *)frame.data;
 
-	int idx_a = find_client_from_public_ip(ntohl(ethz->ipHeader.src_ip), ntohs(ethz->udpHeader.src_port));
-	int idx_b = find_client_from_ID(ethz->dataId.id);
+	int idx_a = find_client_by_public(ntohl(ethz->ipHeader.src_ip), ntohs(ethz->udpHeader.src_port));
+	int idx_b = find_client_by_ID(ethz->dataId.id);
 	if ((idx_a == -1) || (idx_b == -1)){
 		cout << "id not exist, dropped" << endl;
 		return;
@@ -208,11 +208,11 @@ void ServerMachine::receive_Request_getting_IP(Frame frame, int ifaceIndex) {
 	delete[] data;
 }
 
-void ServerMachine::receive_Request_updating_info(Frame frame)
+void ServerMachine::rec_update_request(Frame frame)
 {
 	auto ethz = (packet_md *)frame.data;
 
-	int idx = find_client_from_ID(ethz->hdr.dataId.id);
+	int idx = find_client_by_ID(ethz->hdr.dataId.id);
 	if (idx != -1){
 		information[idx]->addresses.local_ip = ntohl(ethz->md.local_ip);
 		information[idx]->addresses.local_port = ntohs(ethz->md.local_port);
@@ -249,7 +249,7 @@ void ServerMachine::receive_status(Frame frame, int ifaceIndex) {
 	delete[] data;
 }
 
-int ServerMachine::find_client_from_public_ip(uint32 public_ip, uint16_t public_port)
+int ServerMachine::find_client_by_public(uint32 public_ip, uint16_t public_port)
 {
 	for (int i = 0; i < information.size(); ++i) {
 		if (information[i]->addresses.public_ip == public_ip && information[i]->addresses.public_port == public_port){
@@ -265,7 +265,7 @@ int ServerMachine::find_client_from_public_ip(uint32 public_ip, uint16_t public_
 	return -1;
 }
 
-int ServerMachine::find_client_from_ID(byte ID) {
+int ServerMachine::find_client_by_ID(byte ID) {
 	for (int i = 0; i < information.size(); ++i) {
 		if (information[i]->ID == ID){
 			return i;
@@ -274,7 +274,7 @@ int ServerMachine::find_client_from_ID(byte ID) {
 	return -1;
 }
 
-int ServerMachine::find_client_from_local_ip(uint32 local_ip) {
+int ServerMachine::find_client_by_local(uint32 local_ip) {
 	for (int i = 0; i < information.size(); ++i) {
 		if (information[i]->addresses.local_ip == local_ip){
 			return i;
@@ -283,7 +283,7 @@ int ServerMachine::find_client_from_local_ip(uint32 local_ip) {
 	return -1;
 }
 
-int ServerMachine::find_sending_interface(uint32 dst_ip_hdr) {
+int ServerMachine::find_gateway(uint32 dst_ip_hdr) {
 	int count = getCountOfInterfaces();
 	for (int i = 0; i < count; ++i) {
 		uint32 left = this->iface[i].getIp() & this->iface[i].getMask();

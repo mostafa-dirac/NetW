@@ -89,7 +89,7 @@ void NatMachine::processFrame (Frame frame, int ifaceIndex) {
 		int family_idx = find_in_session(ntohl(ethz->ipHeader.dst_ip), ntohs(ethz->udpHeader.dst_port), ntohl(ethz->ipHeader.src_ip), ntohs(ethz->udpHeader.src_port));
 
 		if (family_idx == -1){
-			ifidx = find_sending_interface(ntohl(ethz->ipHeader.src_ip));
+			ifidx = find_gateway(ntohl(ethz->ipHeader.src_ip));
 			fill_header(&(epfl->hdr),
 			            iface[ifidx].mac,
 			            DROP, data_length,
@@ -104,7 +104,7 @@ void NatMachine::processFrame (Frame frame, int ifaceIndex) {
 			return;
 		}
 
-		ifidx = find_sending_interface(table[client_idx]->local_ip);
+		ifidx = find_gateway(table[client_idx]->local_ip);
 		ethz->ipHeader.dst_ip = htonl(table[client_idx]->local_ip);
 		ethz->udpHeader.dst_port = htons(table[client_idx]->local_port);
 		ethz->ipHeader.TTL--;
@@ -115,7 +115,7 @@ void NatMachine::processFrame (Frame frame, int ifaceIndex) {
 	else{
 		if (!valid_in_range(ntohs(ethz->udpHeader.src_port))){
 
-			ifidx = find_sending_interface(ntohl(ethz->ipHeader.src_ip));
+			ifidx = find_gateway(ntohl(ethz->ipHeader.src_ip));
 			fill_header(&(epfl->hdr),
 			            iface[ifidx].mac,
 			            DROP, data_length,
@@ -152,7 +152,7 @@ void NatMachine::processFrame (Frame frame, int ifaceIndex) {
 		ethz->ipHeader.TTL--;
 		ethz->ipHeader.header_checksum = 0;
 		ethz->ipHeader.header_checksum = get_checksum(&(ethz->ipHeader), 20);
-		ifidx = find_sending_interface(ntohl(ethz->ipHeader.dst_ip));
+		ifidx = find_gateway(ntohl(ethz->ipHeader.dst_ip));
 		sendFrame(frame, ifidx);
 	}
 	delete[] data;
@@ -260,7 +260,7 @@ void NatMachine::reset_setting(){
 	cin >> base_port;
 }
 
-int NatMachine::find_sending_interface(uint32 dst_ip_hdr) {
+int NatMachine::find_gateway(uint32 dst_ip_hdr) {
 	int count = getCountOfInterfaces();
 	for (int i = 0; i < count; ++i) {
 		uint32 left = this->iface[i].getIp() & this->iface[i].getMask();

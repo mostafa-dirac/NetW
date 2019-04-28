@@ -185,45 +185,4 @@ void SimpleMachine::fill_header(header *packet_header, byte *mac, data_type type
 
 	packet_header->dataId.data_type = get_data_type(type);
 	packet_header->dataId.id = ID;
-//	fill_ethernet(&(packet_header->ethernetHeader),
-//	              mac);
-//	fill_ip_header(&(packet_header->ipHeader),
-//	               data_length, src_ip, dst_ip);
-//	fill_udp_header(&(packet_header->udpHeader),
-//	                data_length, src_port, dst_port);
-//	fill_data_type_id(&(packet_header->dataId),
-//	                  type, ID);
 }
-
-//void SimpleMachine::fill_ethernet(ethernet_header *packet_header,
-//                   byte *MAC){
-//	packet_header->type = htons (0x0800);
-//	memset(packet_header->dst, 255, 6);
-//	memcpy(packet_header->src, MAC, 6);
-//}
-//
-//void SimpleMachine::fill_ip_header(ip_header *packet_ip_header, int data_length, uint32 src_ip, uint32 dst_ip){
-//	packet_ip_header->version_IHL = 0x45;
-//	packet_ip_header->DSCP_ECN = 0;
-//	packet_ip_header->total_length = htons(sizeof(ip_header) + sizeof(udp_header) + sizeof(data_id) + data_length);
-//	packet_ip_header->identification = 0;
-//	packet_ip_header->flags_fragmentation_offset = 0;
-//	packet_ip_header->TTL = 64;
-//	packet_ip_header->protocol = 17;
-//	packet_ip_header->header_checksum = 0x0;
-//	packet_ip_header->src_ip = htonl(src_ip);
-//	packet_ip_header->dst_ip = htonl(dst_ip);
-//	packet_ip_header->header_checksum = (get_checksum(packet_ip_header, 20));
-//}
-//
-//void SimpleMachine::fill_udp_header(udp_header *udpHeader, int data_length, uint16_t src_port, uint16_t dst_port){
-//	udpHeader->src_port = htons(src_port);
-//	udpHeader->dst_port = htons(dst_port);
-//	udpHeader->length = htons(sizeof(udp_header) + sizeof(data_id) + data_length);
-//	udpHeader->checksum = 0x00;
-//}
-//
-//void SimpleMachine::fill_data_type_id(data_id *dataId, data_type type, uint8_t ID){
-//	dataId->data_type = get_data_type(type);
-//	dataId->id = ID;
-//}

@@ -80,7 +80,7 @@ public:
 	void block_range(uint16_t min, uint16_t max);
 	void reset_setting();
 	int find_in_outer_table(uint32_t public_ip, uint16_t public_port);
-	int find_sending_interface(uint32 dst_ip_hdr);
+	int find_gateway(uint32 dst_ip_hdr);
 };
 
 #endif

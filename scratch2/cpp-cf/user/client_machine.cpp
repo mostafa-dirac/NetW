@@ -43,8 +43,12 @@ ClientMachine::~ClientMachine () {
 }
 
 void ClientMachine::initialize () {
-	// TODO: Initialize your program here; interfaces are valid now.
 	my_ID = 0;
+	connected = false;
+	my_port = 0;
+	peer_info = nullptr;
+	peer_session_kind = INVALID;
+	peer_ID = 0;
 }
 
 /**
@@ -79,41 +83,41 @@ void ClientMachine::processFrame (Frame frame, int ifaceIndex) {
 			if (ethz->hdr.ipHeader.dst_ip == htonl(iface[0].getIp())){
 				switch (detect_data_type(&(ethz->hdr), ethz->pl.message)){
 					case RESPONSE_ASSIGNING_ID:
-						receive_Response_assigning_ID_packet(frame);
+						response_id(frame);
 						break;
 					case DROP:
 						receive_drop_packet(frame);
 						break;
 					case RESPONSE_GETTING_IP:
-						receive_Response_getting_IP_packet(frame);
+						response_ip(frame);
 						break;
 					case REQUEST_LOCAL_SESSION:
-						receive_Request_session_packet(frame, ifaceIndex, REQUEST_LOCAL_SESSION);
+						request_session(frame, ifaceIndex, REQUEST_LOCAL_SESSION);
 						break;
 					case RESPONSE_LOCAL_SESSION:
-						receive_Response_session_packet(frame);
+						response_session(frame);
 						break;
 					case REQUEST_PUBLIC_SESSION:
-						receive_Request_session_packet(frame, ifaceIndex, REQUEST_PUBLIC_SESSION);
+						request_session(frame, ifaceIndex, REQUEST_PUBLIC_SESSION);
 						break;
 					case RESPONSE_PUBLIC_SESSION:
-						receive_Response_session_packet(frame);
+						response_session(frame);
 						break;
 					case MESSAGE:
-						receive_Message_packet(frame);
+						receive_message(frame);
 						break;
 					case NAT_UPDATED:
 						receive_NAT_updated_packet();
 						break;
 					case STATUS_RESPONSE:
-						receive_Status_Response_packet(frame);
+						rec_status_response(frame);
 						break;
 					default:
 						break;
 				}
 			} else {
 
-				int i = find_sending_interface(ntohl(ethz->hdr.ipHeader.dst_ip));
+				int i = find_gateway(ntohl(ethz->hdr.ipHeader.dst_ip));
 
 				ethz->hdr.ipHeader.TTL--;
 				ethz->hdr.ipHeader.header_checksum = 0;
@@ -266,7 +270,7 @@ void ClientMachine::receive_drop_packet(Frame frame) {
 	}
 }
 
-void ClientMachine::receive_Response_assigning_ID_packet(Frame frame) {
+void ClientMachine::response_id(Frame frame) {
 	auto ethz = (header *) frame.data;
 	my_ID = ethz->dataId.id;
 	char *buf = new char[100];
@@ -291,7 +295,7 @@ void ClientMachine::get_id_info(byte ID) {
 	delete[] data;
 }
 
-void ClientMachine::receive_Response_getting_IP_packet(Frame frame) {
+void ClientMachine::response_ip(Frame frame) {
 	auto ethz = (packet_md *)frame.data;
 	if (peer_info == nullptr){
 		peer_info = new metadata;
@@ -332,7 +336,8 @@ void ClientMachine::make_session(byte ID, data_type session_kind) {
 	byte *data = new byte[packet_length];
 	auto ethz = (packet_pl *)data;
 
-	int which_interface = (session_kind == REQUEST_LOCAL_SESSION) ? find_sending_interface(peer_info->local_ip) : find_sending_interface(peer_info->public_ip);
+	int which_interface = (session_kind == REQUEST_LOCAL_SESSION) ? find_gateway(peer_info->local_ip) : find_gateway(
+		peer_info->public_ip);
 	uint32_t destination_ip = (session_kind == REQUEST_LOCAL_SESSION) ? peer_info->local_ip : peer_info->public_ip;
 	uint16_t destination_port = (session_kind == REQUEST_LOCAL_SESSION) ? peer_info->local_port : peer_info->public_port;
 	fill_header(&(ethz->hdr), iface[which_interface].mac, session_kind, data_length,
@@ -345,7 +350,7 @@ void ClientMachine::make_session(byte ID, data_type session_kind) {
 	delete[] data;
 }
 
-void ClientMachine::receive_Request_session_packet(Frame frame, int ifaceIndex, data_type session_kind) {
+void ClientMachine::request_session(Frame frame, int ifaceIndex, data_type session_kind) {
 	int data_length = get_data_length(session_kind);
 	int packet_length = SIZE_OF_HEADER + data_length;
 	auto ethz = (packet_pl *)frame.data;
@@ -389,7 +394,7 @@ bool ClientMachine::check_connection(byte ID) {
 	return peer_ID == ID && connected && peer_info != nullptr;
 }
 
-void ClientMachine::receive_Response_session_packet(Frame frame)
+void ClientMachine::response_session(Frame frame)
 {
 	auto ethz = (packet_pl *)frame.data;
 	if (memcmp(pong, ethz->pl.message, 4) == 0){
@@ -414,7 +419,8 @@ void ClientMachine::send_message(byte ID, char *msg, int msg_length) {
 		byte *data = new byte[packet_length];
 		auto ethz = (packet_pl *)data;
 
-		int which_interface = (peer_session_kind == REQUEST_LOCAL_SESSION ) ? find_sending_interface(peer_info->local_ip) : find_sending_interface(peer_info->public_ip);
+		int which_interface = (peer_session_kind == REQUEST_LOCAL_SESSION ) ? find_gateway(peer_info->local_ip) : find_gateway(
+			peer_info->public_ip);
 		uint32_t destination_ip = (peer_session_kind == REQUEST_LOCAL_SESSION) ? peer_info->local_ip : peer_info->public_ip;
 		uint16_t destination_port = (peer_session_kind == REQUEST_LOCAL_SESSION) ? peer_info->local_port : peer_info->public_port;
 		fill_header(&(ethz->hdr), iface[which_interface].mac, MESSAGE, data_length,
@@ -429,7 +435,7 @@ void ClientMachine::send_message(byte ID, char *msg, int msg_length) {
 	}
 }
 
-void ClientMachine::receive_Message_packet(Frame frame)
+void ClientMachine::receive_message(Frame frame)
 {
 	auto ethz = (packet_pl *)frame.data;
 
@@ -480,7 +486,7 @@ void ClientMachine::ask_status() {
 	delete[] data;
 }
 
-void ClientMachine::receive_Status_Response_packet(Frame frame)
+void ClientMachine::rec_status_response(Frame frame)
 {
 	auto ethz = (packet_pl *)frame.data;
 
@@ -491,7 +497,7 @@ void ClientMachine::receive_Status_Response_packet(Frame frame)
 	}
 }
 
-int ClientMachine::find_sending_interface(uint32 dst_ip_hdr) {
+int ClientMachine::find_gateway(uint32 dst_ip_hdr) {
 	int count = getCountOfInterfaces();
 	for (int i = 0; i < count; ++i) {
 		uint32 left = this->iface[i].getIp() & this->iface[i].getMask();

@@ -69,17 +69,17 @@ public:
 	void receive_drop_packet(Frame frame);
 	void make_session(byte ID, data_type session_kind);
 	void get_id_info(byte ID);
-	void receive_Response_assigning_ID_packet(Frame frame);
-	void receive_Response_getting_IP_packet(Frame frame);
-	void receive_Request_session_packet(Frame frame, int ifaceIndex, data_type session_kind);
+	void response_id(Frame frame);
+	void response_ip(Frame frame);
+	void request_session(Frame frame, int ifaceIndex, data_type session_kind);
 	bool check_connection(byte ID);
-	void receive_Response_session_packet(Frame frame);
+	void response_session(Frame frame);
 	void send_message(byte ID, char *msg, int msg_length);
-	void receive_Message_packet(Frame frame);
+	void receive_message(Frame frame);
 	void receive_NAT_updated_packet();
 	void ask_status();
-	static void receive_Status_Response_packet(Frame frame);
-	int find_sending_interface(uint32 dst_ip_hdr);
+	static void rec_status_response(Frame frame);
+	int find_gateway(uint32 dst_ip_hdr);
 };
 
 #endif
