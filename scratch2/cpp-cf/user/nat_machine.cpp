@@ -42,7 +42,8 @@ NatMachine::~NatMachine () {
 }
 
 void NatMachine::initialize () {
-	// TODO: Initialize your program here; interfaces are valid now.
+	base_port = 2000;
+	counter = 0;
 }
 
 /**
@@ -69,17 +70,7 @@ void NatMachine::initialize () {
  * </code>
  */
 void NatMachine::processFrame (Frame frame, int ifaceIndex) {
-	// TODO: process the raw frame; frame.data points to the frame's byte stream
-	cerr << "Frame received at iface " << ifaceIndex <<
-		" with length " << frame.length << endl;
-  struct ethernet_header {
-    byte  dst[6];
-    byte  src[6];
-    uint16 type;
-  } __attribute__ ((packed));
 
-  ethernet_header *eth = (ethernet_header *) frame.data;
-  cerr << "Ethernet type field is 0x" << std::hex << ntohs (eth->type) << endl;
 }
 
 
@@ -88,30 +79,23 @@ void NatMachine::processFrame (Frame frame, int ifaceIndex) {
  * Returning from this method will not finish the execution of the program.
  */
 void NatMachine::run () {
-	// TODO: write your business logic here...
-  struct ethernet_header {
-    byte  dst[6];
-    byte  src[6];
-    uint16 type;
-  } __attribute__ ((packed));
 
-  const int frameLength = sizeof (ethernet_header) + 100;
-  byte *data = new byte[frameLength];
+}
 
-  ethernet_header *eth = (ethernet_header *) data;
-  memset (eth->dst, 255, 6); // broadcast address
-  memcpy (eth->src, iface[0].mac, 6);
-  eth->type = htons (0x0800);
+address NatMachine::calculate_new_address(){
+	uint32_t new_ip = iface[0].getIp() + (unsigned int)(counter / 3) + 1;
+	uint16_t new_port = base_port + (counter % 3) * 100;
+	counter++;
+	struct address new_address = {new_ip, new_port};
+	return new_address;
+};
 
-  iphdr *packet = (iphdr *) (data + sizeof (ethernet_header));
-  packet->version = 4;
-  packet->ihl = 5;
-  packet->tot_len = htons (100);
-
-  Frame frame (frameLength, data);
-  sendFrame (frame, 0); // sends frame on interface 0
-
-  delete[] data;
-  cerr << "now ./free.sh and check the pcap log file to see the sent packet" << endl;
+bool NatMachine::valid_in_range(uint16_t port){
+	for (auto & itr : blocked_range){ // blocked_range.begin() ; itr < blocked_range.end() ; itr++
+		if (port <= itr.end && port >= itr.begin){
+			return false;
+		}
+	}
+	return true;
 }
 

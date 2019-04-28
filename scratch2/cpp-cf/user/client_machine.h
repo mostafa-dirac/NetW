@@ -29,12 +29,12 @@
 #include "sm.h"
 
 enum input_type_client{
-	make_connection_client,
-	get_id_info_client,
-	make_local_session_client,
-	make_public_session_client,
-	send_msg_client,
-	status_client
+	MAKE_CONNECTION_CLIENT = 1,
+	GET_ID_INFO_CLIENT,
+	MAKE_LOCAL_SESSION_CLIENT,
+	MAKE_PUBLIC_SESSION_CLIENT,
+	SEND_MSG_CLIENT,
+	STATUS_CLIENT
 };
 
 struct client_input {

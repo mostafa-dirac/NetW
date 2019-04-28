@@ -142,7 +142,7 @@ void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
 	auto ethz = (packet *)frame.data;
 
 	if (find_client_from_local_ip(ntohs(ethz->md.local_ip)) != -1){
-		std::cout << "you already have an id, ignored" << std::endl;
+//		std::cout << "you already have an id, ignored" << std::endl;
 		return;
 	}
 	if (current_free_id == 0)
@@ -195,7 +195,7 @@ void ServerMachine::receive_Request_assigning_ID(Frame frame, int ifaceIndex) {
 void ServerMachine::receive_Request_getting_IP(Frame frame, int ifaceIndex) {
 	auto ethz = (header *)frame.data;
 
-	int idx_a = find_client_from_public_ip(ntohl(ethz->ipHeader.src_ip));
+	int idx_a = find_client_from_public_ip(ntohl(ethz->ipHeader.src_ip), ntohs(ethz->udpHeader.src_port));
 	int idx_b = find_client_from_ID(ethz->dataId.id);
 	if ((idx_a == -1) || (idx_b == -1)){
 		cout << "id not exist, dropped" << endl;
@@ -295,9 +295,10 @@ void ServerMachine::receive_status(Frame frame, int ifaceIndex) {
 	delete[] data;
 }
 
-int ServerMachine::find_client_from_public_ip(uint32 public_ip) {
+int ServerMachine::find_client_from_public_ip(uint32 public_ip, uint16_t public_port)
+{
 	for (int i = 0; i < information.size(); ++i) {
-		if (information[i]->addresses.public_ip == public_ip){
+		if (information[i]->addresses.public_ip == public_ip && information[i]->addresses.public_port == public_port){
 			return i;
 		}
 	}

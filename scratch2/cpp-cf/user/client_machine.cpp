@@ -44,6 +44,7 @@ ClientMachine::~ClientMachine () {
 
 void ClientMachine::initialize () {
 	// TODO: Initialize your program here; interfaces are valid now.
+	my_ID = 0;
 }
 
 /**
@@ -154,22 +155,22 @@ void ClientMachine::run () {
 		parse_input(input_info);
 
 		switch (input_info->i_type) {
-			case make_connection_client:
+			case MAKE_CONNECTION_CLIENT:
 				make_connection(input_info->source_port);
 				break;
-			case get_id_info_client:
+			case GET_ID_INFO_CLIENT:
 				get_id_info(input_info->ID);
 				break;
-			case make_local_session_client:
+			case MAKE_LOCAL_SESSION_CLIENT:
 				make_session(input_info->ID, REQUEST_LOCAL_SESSION);
 				break;
-			case make_public_session_client:
+			case MAKE_PUBLIC_SESSION_CLIENT:
 				make_session(input_info->ID, REQUEST_PUBLIC_SESSION);
 				break;
-			case send_msg_client:
+			case SEND_MSG_CLIENT:
 				send_message(input_info->ID, input_info->msg, input_info->msg_length);
 				break;
-			case status_client:
+			case STATUS_CLIENT:
 				ask_status();
 				break;
 			default:
@@ -193,19 +194,19 @@ void ClientMachine::parse_input(client_input *input_info){
 	regex status("status");
 
 	if (regex_match(command, make_a_connection)){
-		input_info->i_type = make_connection_client;
+		input_info->i_type = MAKE_CONNECTION_CLIENT;
 		input_info->source_port = static_cast<uint16>(stoi(command_info[7]));
 	} else if (regex_match(command, get_info)){
-		input_info->i_type = get_id_info_client;
+		input_info->i_type = GET_ID_INFO_CLIENT;
 		input_info->ID = static_cast<uint16>(stoi(command_info[3]));
 	} else if (regex_match(command, make_a_local_session)){
-		input_info->i_type = make_local_session_client;
+		input_info->i_type = MAKE_LOCAL_SESSION_CLIENT;
 		input_info->ID = static_cast<uint16>(stoi(command_info[5]));
 	} else if(regex_match(command, make_a_public_session)){
-		input_info->i_type = make_public_session_client;
+		input_info->i_type = MAKE_PUBLIC_SESSION_CLIENT;
 		input_info->ID = static_cast<uint16>(stoi(command_info[5]));
 	} else if (regex_match(command, (regex) send_msg)){
-		input_info->i_type = send_msg_client;
+		input_info->i_type = SEND_MSG_CLIENT;
 		input_info->msg = new char;
 		vector<string> ID_msg = split(command_info[3], ':');
 		input_info->ID = static_cast<uint16>(stoi(ID_msg[0]));
@@ -214,7 +215,7 @@ void ClientMachine::parse_input(client_input *input_info){
 		name_resan[1].copy(input_info->msg, len);
 		input_info->msg_length = static_cast<int>(len);
 	} else if (regex_match(command, status)){
-		input_info->i_type = status_client;
+		input_info->i_type = STATUS_CLIENT;
 	}
 }
 
@@ -249,6 +250,10 @@ data_type ClientMachine::detect_data_type(header *packet_header, char *dm) {
 }
 
 void ClientMachine::make_connection(uint16_t PORT) {
+	if(my_ID > 0){
+		cout << "you already have an id, ignored" << endl;
+		return;
+	}
 	int data_length = get_data_length(REQUEST_ASSIGNING_ID);
 	const int packet_length = SIZE_OF_HEADER + data_length;
 

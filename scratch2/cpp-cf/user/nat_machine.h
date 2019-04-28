@@ -28,14 +28,41 @@
 #include "simpleMachine.h"
 #include "sm.h"
 
+struct Session{
+	uint32_t local_ip;
+	uint16_t local_port;
+	uint32_t outer_ip;
+	uint16_t outer_port;
+};
+
+struct Range{
+	uint16_t begin;
+	uint16_t end;
+};
+
+struct address{
+	uint32_t ip;
+	uint16_t port;
+};
+
 class NatMachine: public SimpleMachine {
 public:
+
+	std::vector<Range> blocked_range;
+	std::vector<Session> sessions;
+	std::vector<metadata*> table;
+
+	uint16_t base_port;
+	unsigned int counter;
+
 	NatMachine (SimulatedMachine*, Interface* iface);
 	virtual ~NatMachine ();
 
 	virtual void initialize ();
 	virtual void run ();
 	virtual void processFrame (Frame frame, int ifaceIndex);
+	address calculate_new_address();
+	bool valid_in_range(uint16_t port);
 };
 
 #endif
