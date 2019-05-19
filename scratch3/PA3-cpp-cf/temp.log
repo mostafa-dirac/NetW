@@ -1,0 +1,57 @@
+Connecting to Partov server at 213.233.169.80:7890
+           to map/node "even-odd"/"node10" ... [Done]
+Signing in... [Done]
+Selecting map... [Done]
+Connecting to node... [Done]
+Synchronizing information... 
+[Done]
+==========================================
+Interface 0:
+-- Type: Ethernet interface
+-- MAC address: 01:E1:C9:E9:21:02
+-- IP address: 185.88.153.254
+-- Network mask: 255.255.255.0
+---------------------
+Interface 1:
+-- Type: Ethernet interface
+-- MAC address: 01:E1:C9:E9:21:04
+-- IP address: 185.88.153.252
+-- Network mask: 255.255.255.0
+---------------------
+Interface 2:
+-- Type: Ethernet interface
+-- MAC address: 01:E1:C9:E9:21:06
+-- IP address: 185.88.153.250
+-- Network mask: 255.255.255.0
+---------------------
+Interface 3:
+-- Type: Ethernet interface
+-- MAC address: 01:E1:C9:E9:21:01
+-- IP address: 185.88.153.253
+-- Network mask: 255.255.255.0
+---------------------
+Interface 4:
+-- Type: Ethernet interface
+-- MAC address: 01:E1:C9:E9:21:03
+-- IP address: 185.88.153.251
+-- Network mask: 255.255.255.0
+---------------------
+Interface 5:
+-- Type: Ethernet interface
+-- MAC address: 01:E1:C9:E9:21:05
+-- IP address: 185.88.153.249
+-- Network mask: 255.255.255.0
+==========================================
+Custom information for this machine are:
+185.88.153.0
+01:E1:C9:E9:21:00
+6
+==========================================
+Starting simulation... 
+[Done]
+Simulation started. You will receive all frames of the machine from now on.
+==========================================
+
+==========================================
+Sent: 0 bytes(s)
+Received: 0 bytes(s)
